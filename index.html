@@ -1,8 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>NEXCORE SYSTEM</title>
+
+<link
+href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap"
+rel="stylesheet"
+/>
+
+<style>
+
+/* =========================
+RESET
+========================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    overflow:hidden;
+    background:#000;
+
+    font-family:'Orbitron',sans-serif;
+}
+
+/* =========================
+WEBGL
+========================= */
+
+#webgl-container{
+
+    position:fixed;
+    inset:0;
+
+    z-index:1;
+}
+
+/* =========================
+FX
+========================= */
+
+.scanlines{
+
+    position:fixed;
+    inset:0;
+
+    z-index:20;
+
+    pointer-events:none;
+
+    background:
+    repeating-linear-gradient(
+
+        to bottom,
+
+        rgba(255,255,255,.03) 0px,
+        rgba(255,255,255,.03) 1px,
+
+        transparent 2px,
+        transparent 4px
+    );
+
+    mix-blend-mode:soft-light;
+
+    opacity:.18;
+}
+
+.vignette{
+
+    position:fixed;
+    inset:0;
+
+    z-index:21;
+
+    pointer-events:none;
+
+    background:
+    radial-gradient(
+
+        circle,
+
+        transparent 40%,
+        rgba(0,0,0,.55) 100%
+    );
+}
+
+/* =========================
+LOGIN OVERLAY
+========================= */
+
+.login-overlay{
+
+    position:fixed;
+    inset:0;
+
+    z-index:50;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:
+    radial-gradient(
+        circle,
+        rgba(255,255,255,.08),
+        rgba(0,0,0,.92)
+    );
+
+    opacity:0;
+
+    pointer-events:none;
+}
+
+.login-text{
+
+    font-size:
+    clamp(2rem,7vw,7rem);
+
+    color:#d4af37;
+
+    letter-spacing:.6em;
+
+    font-weight:900;
+
+    text-shadow:
+
+    0 0 10px rgba(212,175,55,.8),
+
+    0 0 30px rgba(212,175,55,.4),
+
+    0 0 100px rgba(255,120,0,.2);
+
+    animation:
+    loginPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loginPulse{
+
+    0%,100%{
+
+        transform:scale(1);
+        opacity:.7;
+    }
+
+    50%{
+
+        transform:scale(1.04);
+        opacity:1;
+    }
+}
+
+/* =========================
+HUD
+========================= */
+
+.hud{
+
+    position:fixed;
+    inset:0;
+
+    z-index:10;
+
+    pointer-events:none;
+
+    display:grid;
+
+    grid-template-columns:
+    280px
+    1fr
+    280px;
+
+    grid-template-rows:
+    100px
+    1fr
+    140px;
+
+    gap:18px;
+
+    padding:24px;
+}
+
+.top-left{
+    grid-column:1;
+    grid-row:1;
+}
+
+.top-center{
+
+    grid-column:2;
+    grid-row:1;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.top-right{
+    grid-column:3;
+    grid-row:1;
+}
+
+.left-col{
+
+    grid-column:1;
+    grid-row:2;
+
+    display:flex;
+    flex-direction:column;
+
+    gap:16px;
+}
+
+.right-col{
+
+    grid-column:3;
+    grid-row:2;
+
+    display:flex;
+    flex-direction:column;
+
+    gap:16px;
+}
+
+.bottom-center{
+
+    grid-column:2;
+    grid-row:3;
+
+    display:flex;
+    justify-content:center;
+    align-items:end;
+}
+
+.system-status{
+
+    color:#d4af37;
+
+    font-size:1rem;
+
+    letter-spacing:.25em;
+
+    margin-bottom:8px;
+}
+
+.mini-tag{
+
+    font-size:.7rem;
+
+    letter-spacing:.25em;
+
+    color:rgba(255,255,255,.7);
+}
+
+/* =========================
+TITLE
+========================= */
+
+.main-title{
+
+    font-size:
+    clamp(2rem,5vw,5rem);
+
+    font-weight:900;
+
+    letter-spacing:
+    clamp(.5rem,1vw,1rem);
+
+    color:#d4af37;
+
+    text-shadow:
+
+    0 0 8px rgba(212,175,55,.55),
+
+    0 0 30px rgba(212,175,55,.25),
+
+    0 0 60px rgba(255,120,0,.1);
+
+    animation:titlePulse 4s ease-in-out infinite;
+}
+
+@keyframes titlePulse{
+
+    0%,100%{
+
+        opacity:.7;
+        transform:scale(1);
+    }
+
+    50%{
+
+        opacity:1;
+        transform:scale(1.02);
+    }
+}
+
+/* =========================
+PANELS
+========================= */
+
+.panel{
+
+    background:
+
+    linear-gradient(
+        to bottom,
+        rgba(20,20,20,.5),
+        rgba(0,0,0,.82)
+    );
+
+    border:
+    1px solid rgba(212,175,55,.1);
+
+    backdrop-filter:blur(10px);
+
+    box-shadow:
+
+    inset 0 0 40px rgba(212,175,55,.03),
+
+    0 0 15px rgba(212,175,55,.05);
+
+    padding:14px;
+
+    position:relative;
+
+    overflow:hidden;
+}
+
+.panel::before{
+
+    content:'';
+
+    position:absolute;
+
+    top:0;
+    left:-120%;
+
+    width:70%;
+    height:100%;
+
+    background:
+    linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.06),
+        transparent
+    );
+
+    animation:panelSweep 6s linear infinite;
+}
+
+@keyframes panelSweep{
+
+    100%{
+        left:140%;
+    }
+}
+
+.panel-header{
+
+    display:flex;
+    justify-content:space-between;
+
+    margin-bottom:14px;
+
+    color:#d4af37;
+
+    font-size:.75rem;
+
+    letter-spacing:.25em;
+}
+
+.data-row{
+
+    display:flex;
+    justify-content:space-between;
+
+    margin-bottom:10px;
+
+    color:rgba(255,255,255,.7);
+
+    font-size:.75rem;
+
+    letter-spacing:.15em;
+}
+
+.data-val{
+
+    color:#d4af37;
+}
+
+/* =========================
+RADAR
+========================= */
+
+.radar-panel{
+
+    height:260px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.radar{
+
+    width:180px;
+    height:180px;
+
+    border-radius:50%;
+
+    border:
+    1px solid rgba(212,175,55,.18);
+
+    position:relative;
+
+    animation:radarSpin 8s linear infinite;
+}
+
+.radar::before{
+
+    content:'';
+
+    position:absolute;
+
+    inset:0;
+
+    border-radius:50%;
+
+    background:
+    conic-gradient(
+
+        transparent,
+        rgba(212,175,55,.4),
+        transparent
+    );
+
+    filter:blur(8px);
+}
+
+@keyframes radarSpin{
+
+    100%{
+        transform:rotate(360deg);
+    }
+}
+
+/* =========================
+BUTTON
+========================= */
+
+.link-btn{
+
+    pointer-events:auto;
+
+    padding:16px 72px;
+
+    background:
+    linear-gradient(
+        to bottom,
+        rgba(212,175,55,.12),
+        rgba(0,0,0,.88)
+    );
+
+    border:
+    1px solid rgba(212,175,55,.28);
+
+    color:#d4af37;
+
+    font-family:'Orbitron',sans-serif;
+
+    letter-spacing:.45em;
+
+    cursor:pointer;
+
+    transition:.4s;
+}
+
+.link-btn:hover{
+
+    box-shadow:
+
+    0 0 25px rgba(212,175,55,.25),
+
+    0 0 60px rgba(255,120,0,.1);
+}
+
+/* =========================
+MOBILE
+========================= */
+
+@media(max-width:960px){
+
+    .hud{
+
+        grid-template-columns:1fr;
+
+        grid-template-rows:auto;
+
+        overflow-y:auto;
+    }
+
+    .top-left,
+    .top-center,
+    .top-right,
+    .left-col,
+    .right-col,
+    .bottom-center{
+
+        grid-column:1;
+    }
+}
+
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+</head>
+
 <body>
 
 <div id="webgl-container"></div>
-
-<!-- FX -->
 
 <div class="scanlines"></div>
 <div class="vignette"></div>
@@ -161,300 +694,23 @@
 
 </div>
 
-</body>
+<script type="module">
 
-.hud{
+import * as THREE from 'three';
 
-    position:fixed;
-    inset:0;
+import { EffectComposer }
+from 'three/addons/postprocessing/EffectComposer.js';
 
-    z-index:10;
+import { RenderPass }
+from 'three/addons/postprocessing/RenderPass.js';
 
-    pointer-events:none;
+import { UnrealBloomPass }
+from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-    display:grid;
+/* =========================
+SCENE
+========================= */
 
-    grid-template-columns:
-    280px
-    1fr
-    280px;
-
-    grid-template-rows:
-    100px
-    1fr
-    140px;
-
-    gap:18px;
-
-    padding:24px;
-}
-
-.top-left{
-    grid-column:1;
-    grid-row:1;
-}
-
-.top-center{
-
-    grid-column:2;
-    grid-row:1;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.top-right{
-    grid-column:3;
-    grid-row:1;
-}
-
-.left-col{
-
-    grid-column:1;
-    grid-row:2;
-
-    display:flex;
-    flex-direction:column;
-
-    gap:16px;
-}
-
-.right-col{
-
-    grid-column:3;
-    grid-row:2;
-
-    display:flex;
-    flex-direction:column;
-
-    gap:16px;
-}
-
-.bottom-center{
-
-    grid-column:2;
-    grid-row:3;
-
-    display:flex;
-    justify-content:center;
-    align-items:end;
-}
-
-.mini-tag{
-
-    font-size:.7rem;
-
-    letter-spacing:.25em;
-
-    color:rgba(255,255,255,.7);
-}
-
-.radar-panel{
-
-    height:260px;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.radar{
-
-    width:180px;
-    height:180px;
-
-    border-radius:50%;
-
-    border:
-    1px solid rgba(212,175,55,.18);
-
-    position:relative;
-
-    animation:radarSpin 8s linear infinite;
-}
-
-.radar::before{
-
-    content:'';
-
-    position:absolute;
-
-    inset:0;
-
-    border-radius:50%;
-
-    background:
-    conic-gradient(
-
-        transparent,
-        rgba(212,175,55,.4),
-        transparent
-    );
-
-    filter:blur(8px);
-}
-
-@keyframes radarSpin{
-
-    100%{
-        transform:rotate(360deg);
-    }
-}
-
-.link-btn{
-
-    pointer-events:auto;
-
-    padding:16px 72px;
-
-    background:
-    linear-gradient(
-        to bottom,
-        rgba(212,175,55,.12),
-        rgba(0,0,0,.88)
-    );
-
-    border:
-    1px solid rgba(212,175,55,.28);
-
-    color:#d4af37;
-
-    font-family:'Orbitron',sans-serif;
-
-    letter-spacing:.45em;
-
-    cursor:pointer;
-
-    transition:.4s;
-}
-
-.link-btn:hover{
-
-    box-shadow:
-
-    0 0 25px rgba(212,175,55,.25),
-
-    0 0 60px rgba(255,120,0,.1);
-}
-
-.main-title{
-
-    font-size:
-    clamp(2rem,5vw,5rem);
-
-    font-weight:900;
-
-    letter-spacing:
-    clamp(.5rem,1vw,1rem);
-
-    color:#d4af37;
-
-    text-shadow:
-
-    0 0 8px rgba(212,175,55,.55),
-
-    0 0 30px rgba(212,175,55,.25),
-
-    0 0 60px rgba(255,120,0,.1);
-
-    animation:titlePulse 4s ease-in-out infinite;
-}
-
-@keyframes titlePulse{
-
-    0%,100%{
-
-        opacity:.7;
-        transform:scale(1);
-    }
-
-    50%{
-
-        opacity:1;
-        transform:scale(1.02);
-    }
-}
-
-.panel{
-
-    background:
-
-    linear-gradient(
-        to bottom,
-        rgba(20,20,20,.5),
-        rgba(0,0,0,.82)
-    );
-
-    border:
-    1px solid rgba(212,175,55,.1);
-
-    backdrop-filter:blur(10px);
-
-    box-shadow:
-
-    inset 0 0 40px rgba(212,175,55,.03),
-
-    0 0 15px rgba(212,175,55,.05);
-
-    padding:14px;
-
-    position:relative;
-
-    overflow:hidden;
-}
-
-.panel::before{
-
-    content:'';
-
-    position:absolute;
-
-    top:0;
-    left:-120%;
-
-    width:70%;
-    height:100%;
-
-    background:
-    linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,.06),
-        transparent
-    );
-
-    animation:panelSweep 6s linear infinite;
-}
-
-@keyframes panelSweep{
-
-    100%{
-        left:140%;
-    }
-}
-
-@media(max-width:960px){
-
-    .hud{
-
-        grid-template-columns:1fr;
-
-        grid-template-rows:auto;
-
-        overflow-y:auto;
-    }
-
-    .top-left,
-    .top-center,
-    .top-right,
-    .left-col,
-    .right-col,
-    .bottom-center{
-
-        grid-column:1;
-    }
-}
 const scene =
 new THREE.Scene();
 
@@ -479,6 +735,10 @@ new THREE.PerspectiveCamera(
 
 camera.position.z = 55;
 
+/* =========================
+RENDERER
+========================= */
+
 const renderer =
 new THREE.WebGLRenderer({
 
@@ -502,9 +762,9 @@ document
 .getElementById('webgl-container')
 .appendChild(renderer.domElement);
 
-========================
+/* =========================
 POST FX
-========================
+========================= */
 
 const composer =
 new EffectComposer(renderer);
@@ -528,9 +788,9 @@ new UnrealBloomPass(
 
 composer.addPass(bloom);
 
-========================
+/* =========================
 ARCANE CORE
-========================
+========================= */
 
 const uniforms = {
 
@@ -617,9 +877,9 @@ new THREE.Mesh(
 
 scene.add(core);
 
-========================
-ARCANE RINGS
-========================
+/* =========================
+RINGS
+========================= */
 
 function createRing(radius,color){
 
@@ -662,9 +922,9 @@ createRing(15,0x66ccff);
 const ring3 =
 createRing(20,0xff6b00);
 
-========================
-RADIATION STREAM
-========================
+/* =========================
+STREAM
+========================= */
 
 const streamGroup =
 new THREE.Group();
@@ -813,6 +1073,10 @@ for(let i=0;i<1800;i++){
     streamObjects.push(mesh);
 }
 
+/* =========================
+HUD DATA
+========================= */
+
 function syncData(){
 
     const now = new Date();
@@ -846,6 +1110,10 @@ syncData();
 
 setInterval(syncData,1000);
 
+/* =========================
+INTRO
+========================= */
+
 gsap.from(
 
     '.panel',
@@ -864,6 +1132,9 @@ gsap.from(
     }
 );
 
+/* =========================
+ANIMATION
+========================= */
 
 const clock =
 new THREE.Clock();
@@ -897,12 +1168,25 @@ function animate(){
             obj.position.z +=
             obj.userData.velocity;
 
+            obj.position.x *= 1.012;
+            obj.position.y *= 1.012;
+
             obj.scale.x *= 1.003;
             obj.scale.y *= 1.003;
 
             if(obj.position.z > 80){
 
                 obj.position.z = -2500;
+
+                obj.position.x =
+                Math.cos(obj.userData.angle)
+                *
+                obj.userData.radius;
+
+                obj.position.y =
+                Math.sin(obj.userData.angle)
+                *
+                obj.userData.radius;
 
                 obj.scale.set(1,1,1);
             }
@@ -914,9 +1198,9 @@ function animate(){
 
 animate();
 
-========================
+/* =========================
 LINK START
-========================
+========================= */
 
 const btn =
 document.getElementById('link-btn');
@@ -955,7 +1239,7 @@ btn.addEventListener('click',()=>{
 
         {
 
-            strength:1.2,
+            strength:.8,
 
             duration:1
         }
@@ -981,9 +1265,9 @@ btn.addEventListener('click',()=>{
 
         {
 
-            x:30,
-            y:30,
-            z:30,
+            x:16,
+            y:16,
+            z:16,
 
             duration:6,
 
@@ -1033,11 +1317,27 @@ btn.addEventListener('click',()=>{
 
     setTimeout(()=>{
 
+        gsap.to(renderer.domElement,{
+
+            scaleY:0,
+
+            opacity:0,
+
+            duration:.5,
+
+            ease:'power2.in'
+        });
+
+    },7600);
+
+    setTimeout(()=>{
+
         animationEnded = true;
 
         renderer.dispose();
 
         document.body.innerHTML = `
+
         <div style="
         position:fixed;
         inset:0;
@@ -1050,12 +1350,18 @@ btn.addEventListener('click',()=>{
         letter-spacing:.45em;
         font-size:1rem;
         ">
+
             CONNECTION ESTABLISHED
+
         </div>
         `;
 
     },8500);
 });
+
+/* =========================
+RESIZE
+========================= */
 
 window.addEventListener(
 
@@ -1080,3 +1386,8 @@ window.addEventListener(
         );
     }
 );
+
+</script>
+
+</body>
+</html>
