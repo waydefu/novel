@@ -1,28 +1,3 @@
-PART 1 / 2
-========================
-NEXCORE CINEMATIC LINK START
-CORE SYSTEM UPGRADE
-========================
-
-【新增內容】
-
-✓ 多層 HUD
-✓ SAO Link Start 流程
-✓ 中央核心撞向玩家
-✓ HUD 最終 shutdown
-✓ 放射狀資訊流
-✓ 多色資料線
-✓ 高密度數據
-✓ 資訊流不是橫向文字
-✓ 動畫結束自動停止 render loop
-✓ GPU 壓力下降
-✓ 更電影化
-✓ 可手機自適應
-
-========================
-HTML
-========================
-
 <body>
 
 <div id="webgl-container"></div>
@@ -187,10 +162,6 @@ HTML
 </div>
 
 </body>
-
-========================
-新增 CSS
-========================
 
 .hud{
 
@@ -842,10 +813,6 @@ for(let i=0;i<1800;i++){
     streamObjects.push(mesh);
 }
 
-========================
-HUD DATA
-========================
-
 function syncData(){
 
     const now = new Date();
@@ -879,10 +846,6 @@ syncData();
 
 setInterval(syncData,1000);
 
-========================
-HUD INTRO
-========================
-
 gsap.from(
 
     '.panel',
@@ -901,9 +864,6 @@ gsap.from(
     }
 );
 
-========================
-MAIN LOOP
-========================
 
 const clock =
 new THREE.Clock();
