@@ -3,144 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>J.A.R.V.I.S / SAO Login HUD Background</title>
+    <title>Ultimate Sci-Fi HUD</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
     <style>
-        /* 重置基本樣式，讓 Canvas 填滿整個畫面 */
         body {
             margin: 0;
-            padding: 0;
-            overflow: hidden; /* 隱藏卷軸 */
-            background-color: #000; /* 預設全黑背景 */
+            overflow: hidden;
+            background-color: #030303;
             font-family: 'Courier New', Courier, monospace;
+            color: #fff;
         }
 
-        /* 這是用來放置 Three.js 渲染畫面的容器 */
         #webgl-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1; /* 設定在底層 */
+            z-index: 1;
         }
 
-        /* 這裡可以放你的 UI 元素，疊加在星空之上 */
+        /* 高質感毛玻璃 UI 容器 */
         #hud-ui {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 10; /* 設定在頂層，確保不會被星空蓋住 */
-            color: #00f3ff;
-            text-align: center;
-            text-shadow: 0 0 10px #00f3ff;
-            pointer-events: none; /* 讓滑鼠事件穿透，不會干擾 3D 互動 (如果有的話) */
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            background: rgba(0, 20, 40, 0.2);
+            backdrop-filter: blur(12px); /* 毛玻璃特效 */
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
         }
-        
-        .hud-title {
-            font-size: 32px;
+
+        .title {
+            font-size: 2rem;
+            letter-spacing: 10px;
+            margin-bottom: 5px;
+            color: #fff;
+            text-shadow: 0 0 10px #00f3ff;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: #00f3ff;
             letter-spacing: 5px;
-            margin-bottom: 10px;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        /* 科技感按鈕 */
+        .btn-engage {
+            background: transparent;
+            color: #00f3ff;
+            border: 1px solid #00f3ff;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .btn-engage:hover {
+            background: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 20px #00f3ff;
+            text-shadow: 0 0 5px #fff;
         }
     </style>
-    <!-- 引入 Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.150.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.150.0/examples/jsm/"
+        }
+    }
+    </script>
 </head>
 <body>
 
-    <!-- Three.js 渲染區域 -->
     <div id="webgl-container"></div>
 
-    <!-- 前景 UI 區域 -->
     <div id="hud-ui">
-        <div class="hud-title">SYSTEM INITIALIZING...</div>
-        <div>[ STANDBY ]</div>
+        <div class="title">SYSTEM CORE</div>
+        <div class="subtitle">AWAITING INITIALIZATION</div>
+        <button class="btn-engage" id="login-btn">ENGAGE</button>
     </div>
 
-    <script>
-        // --- 1. 基本設定：場景、相機、渲染器 ---
-        const scene = new THREE.Scene();
-        // 加上一點淡淡的霧氣，讓遠方的星空有漸隱的效果
-        scene.fog = new THREE.FogExp2(0x000000, 0.001);
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.z = 800; // 相機往後退，才能看到星系全貌
-        camera.position.y = 200; // 稍微俯視
-        camera.lookAt(0, 0, 0);  // 鏡頭對準中心
+        // --- 1. 基礎場景設定 ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000511, 0.03); // 增加深邃宇宙的霧氣
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 25;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio); // 適配高解析度螢幕
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('webgl-container').appendChild(renderer.domElement);
 
-        // --- 2. 建立星空粒子 (Particle System) ---
-        // 這裡我們不寫複雜的螺旋形狀，先用最簡單的球形隨機分佈來做一片浩瀚的星空
-        const particleCount = 15000; // 粒子數量
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(particleCount * 3);
-        const colors = new Float32Array(particleCount * 3);
+        // --- 2. 電影級發光後期處理 (Bloom Pass) ---
+        const renderScene = new RenderPass(scene, camera);
+        // 參數：解析度、發光強度、發光半徑、發光門檻
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.0, 0.5, 0.1);
+        
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
 
-        const colorInside = new THREE.Color('#00f3ff'); // 內側顏色：科技藍
-        const colorOutside = new THREE.Color('#002244'); // 外側顏色：深邃藍
+        // --- 3. 核心著色器 (Shader) 魔法：液態能量球 ---
+        // 這是讓球體會像生命體一樣呼吸變形的關鍵
+        const coreUniforms = {
+            uTime: { value: 0.0 },
+            uDistortion: { value: 1.5 }, // 變形程度
+            uColor: { value: new THREE.Color('#00f3ff') }
+        };
 
-        for (let i = 0; i < particleCount; i++) {
-            // 隨機產生 -1000 到 1000 的座標
-            const x = (Math.random() - 0.5) * 2000;
-            const y = (Math.random() - 0.5) * 2000;
-            const z = (Math.random() - 0.5) * 2000;
-
-            positions[i * 3] = x;
-            positions[i * 3 + 1] = y;
-            positions[i * 3 + 2] = z;
-
-            // 簡單的顏色混合：根據粒子距離中心的遠近來決定顏色
-            const distance = Math.sqrt(x*x + y*y + z*z);
-            const ratio = distance / 1500; // 1500是大概的邊界
-            const mixedColor = colorInside.clone().lerp(colorOutside, ratio);
-            
-            colors[i * 3] = mixedColor.r;
-            colors[i * 3 + 1] = mixedColor.g;
-            colors[i * 3 + 2] = mixedColor.b;
-        }
-
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        // 設定粒子的材質
-        const material = new THREE.PointsMaterial({
-            size: 2.5,                 // 粒子大小
-            sizeAttenuation: true,     // 近大遠小
-            depthWrite: false,         // 關閉深度寫入，解決透明遮擋問題
-            blending: THREE.AdditiveBlending, // 加法混合，讓粒子重疊處更亮！(發光關鍵)
-            vertexColors: true         // 啟用頂點顏色
+        const coreMaterial = new THREE.ShaderMaterial({
+            uniforms: coreUniforms,
+            wireframe: true, // 線框模式更有科技感
+            transparent: true,
+            vertexShader: `
+                uniform float uTime;
+                uniform float uDistortion;
+                varying vec3 vNormal;
+                
+                void main() {
+                    vNormal = normal;
+                    vec3 pos = position;
+                    // 使用三角函數與時間製造有機的擾動
+                    float noise = sin(pos.x * 2.0 + uTime) * sin(pos.y * 2.0 + uTime) * sin(pos.z * 2.0 + uTime);
+                    pos += normal * noise * uDistortion;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uColor;
+                varying vec3 vNormal;
+                
+                void main() {
+                    // 讓邊緣發光更亮 (Fresnel Effect)
+                    float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+                    gl_FragColor = vec4(uColor * (intensity * 3.0 + 0.5), 1.0);
+                }
+            `
         });
 
-        // 結合幾何與材質，建立粒子系統物件
-        const particles = new THREE.Points(geometry, material);
-        scene.add(particles);
+        const coreGeometry = new THREE.IcosahedronGeometry(5, 16); // 高面數多面體
+        const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
+        scene.add(coreMesh);
 
-        // --- 3. 動畫與渲染迴圈 ---
-        let time = 0;
+        // --- 4. 背景星塵資料流 ---
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 3000;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i = 0; i < particlesCount * 3; i++) {
+            // 讓星塵分佈在管狀空間中
+            posArray[i] = (Math.random() - 0.5) * 100;
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.1,
+            color: '#b026ff', // 紫色星塵，與青色核心產生對比
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // --- 5. 動畫迴圈 ---
+        const clock = new THREE.Clock();
+
         function animate() {
             requestAnimationFrame(animate);
-            time += 0.002;
+            const elapsedTime = clock.getElapsedTime();
 
-            // 讓整個星空緩慢旋轉
-            particles.rotation.y = time * 0.5;
-            particles.rotation.x = time * 0.2;
+            // 更新 Shader 裡面的時間，讓球體蠕動
+            coreMaterial.uniforms.uTime.value = elapsedTime * 2.0;
+            coreMesh.rotation.y += 0.005;
+            coreMesh.rotation.x += 0.002;
 
-            renderer.render(scene, camera);
+            // 讓星塵不斷往畫面方向飛 (資料流效果)
+            const positions = particlesGeometry.attributes.position.array;
+            for(let i = 2; i < particlesCount * 3; i += 3) {
+                positions[i] += 0.1; // Z軸移動
+                if(positions[i] > 30) positions[i] = -50; // 超過鏡頭就移回遠處
+            }
+            particlesGeometry.attributes.position.needsUpdate = true;
+            particlesMesh.rotation.z += 0.001;
+
+            // 使用 Composer 渲染 (為了 Bloom 效果)
+            composer.render();
         }
+        animate();
 
-        // --- 4. 處理視窗縮放 ---
+        // --- 6. GSAP 頂級進場/點擊互動動畫 ---
+        // 初始 UI 浮現動畫
+        gsap.from("#hud-ui", { duration: 2, y: 50, opacity: 0, ease: "power3.out", delay: 0.5 });
+        gsap.from(coreMesh.scale, { duration: 3, x: 0, y: 0, z: 0, ease: "elastic.out(1, 0.3)" });
+
+        // 點擊「ENGAGE」觸發超扯躍遷動畫
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const tl = gsap.timeline();
+
+            // 1. UI 震動後模糊消失
+            tl.to("#hud-ui", { duration: 0.5, scale: 1.1, opacity: 0, filter: "blur(20px)", ease: "power2.in" });
+            
+            // 2. 核心超載 (變大、變形劇烈、顏色變紅/紫)
+            tl.to(coreMaterial.uniforms.uDistortion, { duration: 1.5, value: 5.0, ease: "power2.inOut" }, "-=0.2");
+            tl.to(coreMaterial.uniforms.uColor.value, { duration: 1.5, r: 1, g: 0.1, b: 0.8 }, "-=1.5");
+            tl.to(coreMesh.rotation, { duration: 2, y: "+=10", x: "+=5", ease: "power2.in" }, "-=1.5");
+            
+            // 3. 鏡頭躍遷 (拉近穿透核心，星空加速)
+            tl.to(camera.position, { duration: 2, z: -10, ease: "power3.in" }, "-=1.0");
+            tl.to(bloomPass, { duration: 2, strength: 8.0, ease: "power2.in" }, "-=2.0");
+
+            // 動畫結束後可以接轉址 (這裡用 alert 示意)
+            tl.call(() => {
+                // window.location.href = '你的下一個網頁.html';
+                alert("SYSTEM BREACHED. WELCOME.");
+            });
+        });
+
+        // 視窗縮放處理
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        // 開始播放動畫
-        animate();
     </script>
 </body>
 </html>
