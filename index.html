@@ -3,23 +3,15 @@
 <head>
 
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<title>NEXCORE ARCANE SYSTEM :: CINEMATIC EDITION</title>
+<title>NEXCORE :: LINK START</title>
 
-<link
-rel="preconnect"
-href="https://fonts.googleapis.com"
-/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <link
-rel="preconnect"
-href="https://fonts.gstatic.com"
-crossorigin
-/>
-
-<link
-href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;600;700&display=swap"
+href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap"
 rel="stylesheet"
 />
 
@@ -30,20 +22,10 @@ rel="stylesheet"
 :root{
 
     --gold:#d4af37;
-    --gold-soft:rgba(212,175,55,0.25);
-    --gold-faint:rgba(212,175,55,0.05);
+    --gold-soft:rgba(212,175,55,.15);
+    --gold-glow:rgba(212,175,55,.45);
 
-    --red:#ff2a2a;
-    --ember:#ff6b00;
-
-    --bg:#030303;
-
-    --panel:
-    linear-gradient(
-        to bottom,
-        rgba(18,18,18,0.7),
-        rgba(0,0,0,0.88)
-    );
+    --bg:#020202;
 
     --font-main:'Orbitron',sans-serif;
     --font-sub:'Rajdhani',sans-serif;
@@ -62,18 +44,14 @@ body{
     height:100%;
     overflow:hidden;
 
-    background:
-    radial-gradient(
-        circle at center,
-        #150b08 0%,
-        #050505 50%,
-        #000 100%
-    );
-
-    color:white;
+    background:black;
 
     font-family:var(--font-main);
 }
+
+/* =========================================
+   WEBGL
+========================================= */
 
 #webgl-container{
 
@@ -83,16 +61,57 @@ body{
     z-index:1;
 }
 
-/* =====================================
-   OVERLAY
-===================================== */
+/* =========================================
+   GLOBAL FX
+========================================= */
 
-.hud-overlay{
+.scanlines{
 
     position:fixed;
     inset:0;
 
-    z-index:5;
+    z-index:8;
+
+    pointer-events:none;
+
+    opacity:.08;
+
+    background:
+    repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(255,255,255,.15) 3px
+    );
+}
+
+.vignette{
+
+    position:fixed;
+    inset:0;
+
+    z-index:9;
+
+    pointer-events:none;
+
+    background:
+    radial-gradient(
+        circle at center,
+        transparent 40%,
+        rgba(0,0,0,.55) 100%
+    );
+}
+
+/* =========================================
+   HUD
+========================================= */
+
+.hud{
+
+    position:fixed;
+    inset:0;
+
+    z-index:10;
 
     pointer-events:none;
 
@@ -106,43 +125,47 @@ body{
     grid-template-rows:
     90px
     1fr
-    140px;
+    130px;
 
-    gap:1rem;
+    padding:clamp(14px,2vw,28px);
 
-    padding:clamp(12px,2vw,28px);
+    gap:16px;
 }
 
-/* =====================================
-   PANELS
-===================================== */
+/* =========================================
+   PANEL
+========================================= */
 
-.hud-panel{
+.panel{
 
-    opacity:0;
-
-    background:var(--panel);
-
-    border:
-    1px solid
-    rgba(212,175,55,0.18);
-
-    backdrop-filter:blur(12px);
-
-    box-shadow:
-
-    0 0 30px rgba(212,175,55,0.08),
-
-    inset 0 0 40px rgba(255,120,0,0.02);
-
-    padding:14px;
+    position:relative;
 
     overflow:hidden;
 
-    position:relative;
+    background:
+    linear-gradient(
+        to bottom,
+        rgba(15,15,15,.5),
+        rgba(0,0,0,.78)
+    );
+
+    border:
+    1px solid rgba(212,175,55,.12);
+
+    backdrop-filter:blur(10px);
+
+    box-shadow:
+
+    inset 0 0 40px rgba(212,175,55,.02),
+
+    0 0 20px rgba(212,175,55,.05);
+
+    padding:14px;
+
+    opacity:0;
 }
 
-.hud-panel::before{
+.panel::before{
 
     content:'';
 
@@ -158,14 +181,14 @@ body{
     linear-gradient(
         90deg,
         transparent,
-        rgba(255,255,255,0.06),
+        rgba(255,255,255,.06),
         transparent
     );
 
-    animation:scan 7s linear infinite;
+    animation:panelSweep 6s linear infinite;
 }
 
-@keyframes scan{
+@keyframes panelSweep{
 
     100%{
         left:140%;
@@ -176,20 +199,17 @@ body{
 
     display:flex;
     justify-content:space-between;
-    align-items:center;
 
-    margin-bottom:14px;
+    margin-bottom:12px;
+
+    font-size:.7rem;
+
+    letter-spacing:.35em;
 
     color:var(--gold);
 
-    font-size:clamp(0.55rem,0.8vw,0.75rem);
-
-    letter-spacing:0.35em;
-
-    border-bottom:
-    1px solid rgba(212,175,55,0.15);
-
-    padding-bottom:8px;
+    text-shadow:
+    0 0 8px var(--gold-glow);
 }
 
 .data-row{
@@ -199,11 +219,11 @@ body{
 
     margin-bottom:8px;
 
-    font-size:clamp(0.65rem,0.9vw,0.9rem);
-
     font-family:var(--font-sub);
 
-    color:rgba(255,255,255,0.7);
+    font-size:.9rem;
+
+    color:rgba(255,255,255,.7);
 }
 
 .data-val{
@@ -211,12 +231,12 @@ body{
     color:var(--gold);
 
     text-shadow:
-    0 0 10px rgba(212,175,55,0.4);
+    0 0 8px rgba(212,175,55,.45);
 }
 
-/* =====================================
-   TOP
-===================================== */
+/* =========================================
+   HEADER
+========================================= */
 
 .header-left{
 
@@ -224,20 +244,40 @@ body{
     grid-row:1;
 
     display:flex;
-    align-items:center;
     justify-content:space-between;
+    align-items:center;
 }
 
 .system-status{
 
     color:var(--gold);
 
-    font-size:clamp(1rem,1.5vw,1.6rem);
+    font-size:1.2rem;
 
-    letter-spacing:0.4em;
+    letter-spacing:.4em;
+
+    animation:uiPulse 4s ease-in-out infinite;
 
     text-shadow:
-    0 0 20px rgba(212,175,55,0.4);
+
+    0 0 8px rgba(212,175,55,.5),
+
+    0 0 20px rgba(212,175,55,.25);
+}
+
+@keyframes uiPulse{
+
+    0%,100%{
+
+        opacity:.65;
+        filter:brightness(1);
+    }
+
+    50%{
+
+        opacity:1;
+        filter:brightness(1.25);
+    }
 }
 
 .header-center{
@@ -246,8 +286,8 @@ body{
     grid-row:1;
 
     display:flex;
-    justify-content:center;
     align-items:center;
+    justify-content:center;
 }
 
 .main-title{
@@ -260,15 +300,21 @@ body{
     font-weight:900;
 
     letter-spacing:
-    clamp(0.4rem,1vw,1rem);
+    clamp(.4rem,1vw,1rem);
 
     color:var(--gold);
 
+    mix-blend-mode:screen;
+
     text-shadow:
 
-    0 0 20px rgba(212,175,55,0.5),
+    0 0 8px rgba(212,175,55,.6),
 
-    0 0 60px rgba(255,120,0,0.25);
+    0 0 25px rgba(212,175,55,.35),
+
+    0 0 50px rgba(255,120,0,.15);
+
+    animation:uiPulse 5s ease-in-out infinite;
 }
 
 .main-title::after{
@@ -277,7 +323,7 @@ body{
 
     position:absolute;
 
-    bottom:-12px;
+    bottom:-14px;
     left:0;
 
     width:100%;
@@ -292,9 +338,9 @@ body{
     );
 }
 
-/* =====================================
-   LEFT / RIGHT
-===================================== */
+/* =========================================
+   COLUMNS
+========================================= */
 
 .left-col{
 
@@ -303,24 +349,26 @@ body{
 
     display:flex;
     flex-direction:column;
+
     gap:14px;
 }
 
 .right-col{
 
     grid-column:3;
-    grid-row:2 / span 2;
+    grid-row:2;
 
     display:flex;
     flex-direction:column;
+
     gap:14px;
 }
 
-/* =====================================
-   FOOTER
-===================================== */
+/* =========================================
+   BUTTON
+========================================= */
 
-.footer-center{
+.footer{
 
     grid-column:2;
     grid-row:3;
@@ -328,11 +376,9 @@ body{
     display:flex;
     justify-content:center;
     align-items:end;
-
-    padding-bottom:20px;
 }
 
-.btn-engage{
+.link-btn{
 
     pointer-events:auto;
 
@@ -343,32 +389,33 @@ body{
     background:
     linear-gradient(
         to bottom,
-        rgba(212,175,55,0.12),
-        rgba(0,0,0,0.8)
+        rgba(212,175,55,.12),
+        rgba(0,0,0,.85)
     );
 
     border:
-    1px solid rgba(212,175,55,0.3);
+    1px solid rgba(212,175,55,.28);
 
     color:var(--gold);
 
     padding:
-    clamp(12px,1vw,18px)
-    clamp(30px,5vw,80px);
+    16px 60px;
 
-    font-size:
-    clamp(0.8rem,1vw,1rem);
+    font-size:1rem;
 
-    letter-spacing:0.45em;
+    letter-spacing:.5em;
 
     font-family:var(--font-main);
 
     cursor:pointer;
 
-    transition:0.4s;
+    transition:.4s;
+
+    text-shadow:
+    0 0 10px rgba(212,175,55,.5);
 }
 
-.btn-engage::before{
+.link-btn::before{
 
     content:'';
 
@@ -384,161 +431,132 @@ body{
     linear-gradient(
         90deg,
         transparent,
-        rgba(255,255,255,0.18),
+        rgba(255,255,255,.2),
         transparent
     );
 
-    transition:0.7s;
+    transition:.7s;
 }
 
-.btn-engage:hover::before{
+.link-btn:hover::before{
     left:120%;
 }
 
-.btn-engage:hover{
+.link-btn:hover{
 
     transform:translateY(-2px);
 
     box-shadow:
 
-    0 0 30px rgba(212,175,55,0.25),
+    0 0 25px rgba(212,175,55,.25),
 
-    0 0 80px rgba(255,120,0,0.15);
+    0 0 60px rgba(255,120,0,.1);
 }
 
-/* =====================================
-   BARS
-===================================== */
+/* =========================================
+   STREAM TEXT
+========================================= */
 
-.bar-chart{
-
-    display:flex;
-    align-items:end;
-
-    height:120px;
-
-    gap:5px;
-}
-
-.bar{
-
-    flex:1;
-
-    border-radius:3px;
-
-    background:
-    linear-gradient(
-        to top,
-        #ff2a2a,
-        #d4af37
-    );
-
-    box-shadow:
-    0 0 15px rgba(212,175,55,0.25);
-
-    height:40%;
-}
-
-/* =====================================
-   BOOT
-===================================== */
-
-.boot-screen{
+.stream-layer{
 
     position:fixed;
     inset:0;
 
-    z-index:20;
-
-    background:black;
-
-    display:flex;
-    flex-direction:column;
-
-    align-items:center;
-    justify-content:center;
+    z-index:6;
 
     overflow:hidden;
+
+    pointer-events:none;
 }
 
-.boot-title{
+.stream{
 
-    color:var(--gold);
+    position:absolute;
 
-    font-size:
-    clamp(2rem,5vw,4rem);
+    color:rgba(212,175,55,.7);
 
-    letter-spacing:0.6em;
+    font-family:var(--font-sub);
+
+    letter-spacing:.2em;
+
+    white-space:nowrap;
+
+    text-shadow:
+    0 0 10px rgba(212,175,55,.5);
 
     opacity:0;
 }
 
-.boot-sub{
+/* =========================================
+   LOGIN TEXT
+========================================= */
 
-    margin-top:20px;
+.login-overlay{
 
-    color:rgba(255,255,255,0.7);
+    position:fixed;
+    inset:0;
 
-    letter-spacing:0.4em;
+    z-index:30;
 
-    font-family:var(--font-sub);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    pointer-events:none;
+
+    opacity:0;
 }
 
-/* =====================================
+.login-text{
+
+    color:white;
+
+    font-size:
+    clamp(1.2rem,3vw,3rem);
+
+    letter-spacing:.8em;
+
+    text-shadow:
+
+    0 0 10px white,
+
+    0 0 30px rgba(255,255,255,.4);
+}
+
+/* =========================================
    MOBILE
-===================================== */
+========================================= */
 
 @media(max-width:960px){
 
-    .hud-overlay{
+    .hud{
 
         grid-template-columns:1fr;
 
-        grid-template-rows:
-        auto
-        auto
-        auto
-        auto
-        auto;
+        grid-template-rows:auto;
 
         overflow-y:auto;
     }
 
-    .header-left{
+    .header-left,
+    .header-center,
+    .left-col,
+    .right-col,
+    .footer{
+
         grid-column:1;
-        grid-row:1;
     }
 
-    .header-center{
-        grid-column:1;
-        grid-row:2;
-    }
-
-    .left-col{
-        grid-column:1;
-        grid-row:3;
-    }
-
-    .right-col{
-        grid-column:1;
-        grid-row:4;
-    }
-
-    .footer-center{
-        grid-column:1;
-        grid-row:5;
-    }
+    .header-left{grid-row:1;}
+    .header-center{grid-row:2;}
+    .left-col{grid-row:3;}
+    .right-col{grid-row:4;}
+    .footer{grid-row:5;}
 
     .main-title{
 
         text-align:center;
-
         line-height:1.2;
-    }
-
-    .hud-panel{
-
-        min-height:auto;
     }
 }
 
@@ -546,7 +564,7 @@ body{
 
 <script type="importmap">
 {
-    "imports":{
+    "imports": {
         "three":"https://unpkg.com/three@0.150.0/build/three.module.js",
         "three/addons/":"https://unpkg.com/three@0.150.0/examples/jsm/"
     }
@@ -559,29 +577,36 @@ body{
 
 <div id="webgl-container"></div>
 
-<div class="boot-screen">
+<div class="stream-layer"></div>
 
-    <div class="boot-title">
-        NEXCORE
-    </div>
+<div class="scanlines"></div>
 
-    <div class="boot-sub">
-        ARCANE SYSTEM INITIALIZATION
+<div class="vignette"></div>
+
+<div class="login-overlay">
+
+    <div class="login-text">
+        LINK START
     </div>
 
 </div>
 
-<div class="hud-overlay">
+<div class="hud">
 
-    <div class="hud-panel header-left">
+    <div class="panel header-left">
 
         <div class="system-status">
             ACTIVE
         </div>
 
-        <div style="font-size:12px;">
+        <div
+        style="
+        color:rgba(255,255,255,.65);
+        font-size:.8rem;
+        letter-spacing:.25em;
+        ">
             ARCANE<br>
-            INTERFACE
+            SYSTEM
         </div>
 
     </div>
@@ -596,7 +621,7 @@ body{
 
     <div class="left-col">
 
-        <div class="hud-panel">
+        <div class="panel">
 
             <div class="panel-header">
 
@@ -623,46 +648,11 @@ body{
 
         </div>
 
-        <div class="hud-panel">
-
-            <div class="panel-header">
-                <span>SYSTEM_ANALYSIS</span>
-            </div>
-
-            <div class="data-row">
-                <span>PLATFORM</span>
-                <span class="data-val" id="platform"></span>
-            </div>
-
-            <div class="data-row">
-                <span>CORES</span>
-                <span class="data-val" id="cores"></span>
-            </div>
-
-            <div class="data-row">
-                <span>LANG</span>
-                <span class="data-val" id="lang"></span>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="footer-center">
-
-        <button
-        class="btn-engage"
-        id="engage-btn">
-
-            SYNCHRONIZE
-
-        </button>
-
     </div>
 
     <div class="right-col">
 
-        <div class="hud-panel">
+        <div class="panel">
 
             <div class="panel-header">
 
@@ -687,28 +677,17 @@ body{
 
         </div>
 
-        <div class="hud-panel">
+    </div>
 
-            <div class="panel-header">
-                <span>CORE_LOAD</span>
-            </div>
+    <div class="footer">
 
-            <div class="bar-chart">
+        <button
+        class="link-btn"
+        id="link-btn">
 
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
+            LINK START
 
-            </div>
-
-        </div>
+        </button>
 
     </div>
 
@@ -727,9 +706,9 @@ from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass }
 from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-/* =====================================
+/* =========================================
    SCENE
-===================================== */
+========================================= */
 
 const scene =
 new THREE.Scene();
@@ -737,7 +716,7 @@ new THREE.Scene();
 scene.fog =
 new THREE.FogExp2(
     0x000000,
-    0.015
+    0.012
 );
 
 const camera =
@@ -753,7 +732,7 @@ new THREE.PerspectiveCamera(
     2000
 );
 
-camera.position.z = 40;
+camera.position.z = 36;
 
 const renderer =
 new THREE.WebGLRenderer({
@@ -778,9 +757,9 @@ document
 .getElementById('webgl-container')
 .appendChild(renderer.domElement);
 
-/* =====================================
+/* =========================================
    POST FX
-===================================== */
+========================================= */
 
 const composer =
 new EffectComposer(renderer);
@@ -797,23 +776,23 @@ new UnrealBloomPass(
         window.innerHeight
     ),
 
-    1.7,
-    0.5,
-    0.2
+    .65,
+    .4,
+    .2
 );
 
 composer.addPass(bloom);
 
-/* =====================================
-   SHADER CORE
-===================================== */
+/* =========================================
+   CORE
+========================================= */
 
 const uniforms = {
 
     uTime:{value:0}
 };
 
-const coreMaterial =
+const coreMat =
 new THREE.ShaderMaterial({
 
     transparent:true,
@@ -836,11 +815,11 @@ new THREE.ShaderMaterial({
 
         float wave =
 
-        sin(pos.y * 3.0 + uTime * 1.5)
+        sin(pos.x * 2.5 + uTime)
         *
-        cos(pos.x * 3.0 + uTime)
+        cos(pos.y * 2.5 + uTime)
         *
-        0.5;
+        0.15;
 
         pos += normal * wave;
 
@@ -863,23 +842,19 @@ new THREE.ShaderMaterial({
         pow(
             1.0 -
             dot(vNormal,vec3(0,0,1.0)),
-            3.0
+            2.0
         );
-
-        vec3 gold =
-        vec3(0.83,0.68,0.22);
-
-        vec3 ember =
-        vec3(1.0,0.3,0.0);
 
         vec3 color =
 
-        gold * fresnel * 2.5
-        +
-        ember * pow(fresnel,4.0);
+        vec3(.83,.68,.22)
+        *
+        fresnel
+        *
+        1.2;
 
         gl_FragColor =
-        vec4(color,0.85);
+        vec4(color,.55);
     }
     `
 });
@@ -889,163 +864,147 @@ new THREE.Mesh(
 
     new THREE.TorusKnotGeometry(
         4,
-        1,
-        300,
-        32
+        .8,
+        260,
+        24
     ),
 
-    coreMaterial
+    coreMat
 );
 
 scene.add(core);
 
-/* =====================================
-   RUNE RINGS
-===================================== */
+/* =========================================
+   RINGS
+========================================= */
 
 function createRing(radius,color){
 
-    const group =
-    new THREE.Group();
-
-    const ringGeo =
+    const geo =
     new THREE.RingGeometry(
         radius,
-        radius + 0.05,
+        radius + .03,
         120
     );
 
-    const ringMat =
+    const mat =
     new THREE.MeshBasicMaterial({
 
         color,
-        side:THREE.DoubleSide,
         transparent:true,
-        opacity:0.25
+        opacity:.15,
+        side:THREE.DoubleSide
     });
 
-    const ring =
-    new THREE.Mesh(
-        ringGeo,
-        ringMat
-    );
+    const mesh =
+    new THREE.Mesh(geo,mat);
 
-    group.add(ring);
-
-    for(let i=0;i<32;i++){
-
-        const angle =
-        (Math.PI*2/32)*i;
-
-        const geo =
-        new THREE.BoxGeometry(
-            0.1,
-            0.5,
-            0.05
-        );
-
-        const mat =
-        new THREE.MeshBasicMaterial({
-            color
-        });
-
-        const rune =
-        new THREE.Mesh(geo,mat);
-
-        rune.position.x =
-        Math.cos(angle)*radius;
-
-        rune.position.y =
-        Math.sin(angle)*radius;
-
-        rune.rotation.z =
-        angle;
-
-        group.add(rune);
-    }
-
-    group.rotation.x =
+    mesh.rotation.x =
     Math.PI/2;
 
-    return group;
+    scene.add(mesh);
+
+    return mesh;
 }
 
-const rune1 =
-createRing(9,0xd4af37);
+const ring1 =
+createRing(8,0xd4af37);
 
-const rune2 =
-createRing(13,0xff2a2a);
+const ring2 =
+createRing(12,0xd4af37);
 
-const rune3 =
-createRing(17,0xff6b00);
+const ring3 =
+createRing(16,0xd4af37);
 
-scene.add(rune1,rune2,rune3);
+/* =========================================
+   DATA STREAM TUNNEL
+========================================= */
 
-/* =====================================
-   SAO TUNNEL
-===================================== */
+const streamGroup =
+new THREE.Group();
 
-const tunnelGeo =
-new THREE.BufferGeometry();
+scene.add(streamGroup);
 
-const tunnelCount = 12000;
+const streamTexts = [];
 
-const positions =
-new Float32Array(
-    tunnelCount * 3
-);
+const labels = [
 
-for(let i=0;i<tunnelCount;i++){
+    'SYS_CORE',
+    'NEURAL_LINK',
+    'AUTH',
+    'SYNC',
+    'A-204',
+    'NEXCORE',
+    'INIT',
+    'GATEWAY',
+    '01X',
+    'SEQUENCE'
+];
 
-    const r =
-    10 + Math.random()*25;
+for(let i=0;i<220;i++){
 
-    const theta =
-    Math.random() * Math.PI * 2;
+    const canvas =
+    document.createElement('canvas');
 
-    positions[i*3] =
-    Math.cos(theta)*r;
+    canvas.width = 512;
+    canvas.height = 128;
 
-    positions[i*3+1] =
-    Math.sin(theta)*r;
+    const ctx =
+    canvas.getContext('2d');
 
-    positions[i*3+2] =
-    (Math.random()-0.5)*800;
+    ctx.fillStyle =
+    'rgba(212,175,55,.9)';
+
+    ctx.font =
+    'bold 42px Orbitron';
+
+    ctx.fillText(
+
+        labels[
+            Math.floor(
+                Math.random()*labels.length
+            )
+        ],
+
+        30,
+        70
+    );
+
+    const texture =
+    new THREE.CanvasTexture(canvas);
+
+    const material =
+    new THREE.SpriteMaterial({
+
+        map:texture,
+
+        transparent:true,
+
+        opacity:0
+    });
+
+    const sprite =
+    new THREE.Sprite(material);
+
+    sprite.position.x =
+    (Math.random()-.5)*30;
+
+    sprite.position.y =
+    (Math.random()-.5)*20;
+
+    sprite.position.z =
+    -Math.random()*1000;
+
+    sprite.scale.set(6,1.5,1);
+
+    streamGroup.add(sprite);
+
+    streamTexts.push(sprite);
 }
 
-tunnelGeo.setAttribute(
-
-    'position',
-
-    new THREE.BufferAttribute(
-        positions,
-        3
-    )
-);
-
-const tunnelMat =
-new THREE.PointsMaterial({
-
-    color:'#d4af37',
-
-    size:0.12,
-
-    transparent:true,
-
-    opacity:0.9
-});
-
-const tunnel =
-new THREE.Points(
-    tunnelGeo,
-    tunnelMat
-);
-
-scene.add(tunnel);
-
-/* =====================================
+/* =========================================
    DATA
-===================================== */
+========================================= */
 
 function syncData(){
 
@@ -1062,18 +1021,6 @@ function syncData(){
     document.getElementById('utc')
     .innerText =
     now.toUTCString().slice(17,25);
-
-    document.getElementById('platform')
-    .innerText =
-    navigator.platform;
-
-    document.getElementById('cores')
-    .innerText =
-    navigator.hardwareConcurrency;
-
-    document.getElementById('lang')
-    .innerText =
-    navigator.language;
 
     document.getElementById('width')
     .innerText =
@@ -1092,12 +1039,38 @@ syncData();
 
 setInterval(syncData,1000);
 
-/* =====================================
-   ANIMATE
-===================================== */
+/* =========================================
+   UI INTRO
+========================================= */
+
+gsap.to(
+
+    '.panel',
+
+    {
+
+        opacity:1,
+
+        y:0,
+
+        from:{y:25},
+
+        stagger:.08,
+
+        duration:1.5,
+
+        ease:'power4.out'
+    }
+);
+
+/* =========================================
+   ANIMATION
+========================================= */
 
 const clock =
 new THREE.Clock();
+
+let tunnelActive = false;
 
 function animate(){
 
@@ -1108,142 +1081,61 @@ function animate(){
 
     uniforms.uTime.value = t;
 
-    core.rotation.x += 0.002;
-    core.rotation.y += 0.004;
+    core.rotation.x += .0015;
+    core.rotation.y += .0025;
 
-    rune1.rotation.z += 0.002;
-    rune2.rotation.z -= 0.0015;
-    rune3.rotation.z += 0.001;
+    ring1.rotation.z += .0015;
+    ring2.rotation.z -= .001;
+    ring3.rotation.z += .0005;
 
-    const arr =
-    tunnelGeo.attributes.position.array;
+    if(tunnelActive){
 
-    for(let i=2;i<tunnelCount*3;i+=3){
+        streamTexts.forEach(s=>{
 
-        arr[i] += 4.5;
+            s.material.opacity = .8;
 
-        if(arr[i] > 80){
+            s.position.z += 10;
 
-            arr[i] = -700;
-        }
+            if(s.position.z > 40){
+
+                s.position.z = -1000;
+            }
+        });
     }
-
-    tunnelGeo.attributes
-    .position.needsUpdate = true;
-
-    document
-    .querySelectorAll('.bar')
-    .forEach(bar=>{
-
-        if(Math.random()>0.8){
-
-            bar.style.height =
-            (15 + Math.random()*85)
-            + '%';
-        }
-    });
 
     composer.render();
 }
 
 animate();
 
-/* =====================================
-   BOOT
-===================================== */
+/* =========================================
+   LINK START
+========================================= */
 
-gsap.to(
+const btn =
+document.getElementById('link-btn');
 
-    '.boot-title',
+btn.addEventListener('click',()=>{
 
-    {
-        opacity:1,
-        duration:2
-    }
-);
+    tunnelActive = true;
 
-gsap.to(
+    gsap.to(
 
-    '.boot-screen',
-
-    {
-        opacity:0,
-        delay:3,
-        duration:2,
-
-        onComplete:()=>{
-
-            document
-            .querySelector('.boot-screen')
-            .style.display='none';
-        }
-    }
-);
-
-gsap.to(
-
-    '.hud-panel',
-
-    {
-        opacity:1,
-
-        y:0,
-
-        from:{y:40},
-
-        stagger:0.08,
-
-        delay:3.2,
-
-        duration:1.5,
-
-        ease:'power4.out'
-    }
-);
-
-/* =====================================
-   BUTTON
-===================================== */
-
-document
-.getElementById('engage-btn')
-.addEventListener('click',()=>{
-
-    gsap.fromTo(
-
-        camera.position,
+        '.login-overlay',
 
         {
-            z:40
-        },
-
-        {
-            z:22,
-
-            duration:2,
-
-            ease:'power3.inOut',
-
-            yoyo:true,
-
-            repeat:1
+            opacity:1,
+            duration:.4
         }
     );
 
     gsap.to(
 
-        core.scale,
+        '.hud',
 
         {
-            x:1.4,
-            y:1.4,
-            z:1.4,
-
-            duration:1.2,
-
-            yoyo:true,
-
-            repeat:1
+            opacity:.15,
+            duration:1.2
         }
     );
 
@@ -1252,20 +1144,65 @@ document
         bloom,
 
         {
-            strength:3,
+            strength:1.4,
+            duration:.8
+        }
+    );
 
-            duration:0.6,
+    gsap.to(
 
-            yoyo:true,
+        camera.position,
 
-            repeat:1
+        {
+
+            z:6,
+
+            duration:4,
+
+            ease:'power4.in'
+        }
+    );
+
+    gsap.to(
+
+        core.rotation,
+
+        {
+
+            y:12,
+
+            duration:4
+        }
+    );
+
+    gsap.to(
+
+        '.login-overlay',
+
+        {
+
+            opacity:0,
+
+            delay:2,
+
+            duration:1.5
+        }
+    );
+
+    gsap.to(
+
+        '.link-btn',
+
+        {
+            opacity:0,
+            duration:.5
         }
     );
 });
 
-/* =====================================
+/* =========================================
    RESIZE
-===================================== */
+========================================= */
 
 window.addEventListener(
 
