@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S / SAO Login HUD Background</title>
+    <style>
+        /* 重置基本樣式，讓 Canvas 填滿整個畫面 */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* 隱藏卷軸 */
+            background-color: #000; /* 預設全黑背景 */
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* 這是用來放置 Three.js 渲染畫面的容器 */
+        #webgl-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* 設定在底層 */
+        }
+
+        /* 這裡可以放你的 UI 元素，疊加在星空之上 */
+        #hud-ui {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10; /* 設定在頂層，確保不會被星空蓋住 */
+            color: #00f3ff;
+            text-align: center;
+            text-shadow: 0 0 10px #00f3ff;
+            pointer-events: none; /* 讓滑鼠事件穿透，不會干擾 3D 互動 (如果有的話) */
+        }
+        
+        .hud-title {
+            font-size: 32px;
+            letter-spacing: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+    <!-- 引入 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <!-- Three.js 渲染區域 -->
+    <div id="webgl-container"></div>
+
+    <!-- 前景 UI 區域 -->
+    <div id="hud-ui">
+        <div class="hud-title">SYSTEM INITIALIZING...</div>
+        <div>[ STANDBY ]</div>
+    </div>
+
+    <script>
+        // --- 1. 基本設定：場景、相機、渲染器 ---
+        const scene = new THREE.Scene();
+        // 加上一點淡淡的霧氣，讓遠方的星空有漸隱的效果
+        scene.fog = new THREE.FogExp2(0x000000, 0.001);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.z = 800; // 相機往後退，才能看到星系全貌
+        camera.position.y = 200; // 稍微俯視
+        camera.lookAt(0, 0, 0);  // 鏡頭對準中心
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // 適配高解析度螢幕
+        document.getElementById('webgl-container').appendChild(renderer.domElement);
+
+        // --- 2. 建立星空粒子 (Particle System) ---
+        // 這裡我們不寫複雜的螺旋形狀，先用最簡單的球形隨機分佈來做一片浩瀚的星空
+        const particleCount = 15000; // 粒子數量
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+
+        const colorInside = new THREE.Color('#00f3ff'); // 內側顏色：科技藍
+        const colorOutside = new THREE.Color('#002244'); // 外側顏色：深邃藍
+
+        for (let i = 0; i < particleCount; i++) {
+            // 隨機產生 -1000 到 1000 的座標
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+
+            positions[i * 3] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
+
+            // 簡單的顏色混合：根據粒子距離中心的遠近來決定顏色
+            const distance = Math.sqrt(x*x + y*y + z*z);
+            const ratio = distance / 1500; // 1500是大概的邊界
+            const mixedColor = colorInside.clone().lerp(colorOutside, ratio);
+            
+            colors[i * 3] = mixedColor.r;
+            colors[i * 3 + 1] = mixedColor.g;
+            colors[i * 3 + 2] = mixedColor.b;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // 設定粒子的材質
+        const material = new THREE.PointsMaterial({
+            size: 2.5,                 // 粒子大小
+            sizeAttenuation: true,     // 近大遠小
+            depthWrite: false,         // 關閉深度寫入，解決透明遮擋問題
+            blending: THREE.AdditiveBlending, // 加法混合，讓粒子重疊處更亮！(發光關鍵)
+            vertexColors: true         // 啟用頂點顏色
+        });
+
+        // 結合幾何與材質，建立粒子系統物件
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        // --- 3. 動畫與渲染迴圈 ---
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.002;
+
+            // 讓整個星空緩慢旋轉
+            particles.rotation.y = time * 0.5;
+            particles.rotation.x = time * 0.2;
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 4. 處理視窗縮放 ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 開始播放動畫
+        animate();
+    </script>
+</body>
+</html>
