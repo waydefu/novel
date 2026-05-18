@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Sci-Fi HUD</title>
+    <title>Ultimate Sci-Fi HUD - Full Arsenal</title>
+    <!-- 引入 GSAP 動畫庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     
     <style>
@@ -13,6 +14,7 @@
             background-color: #030303;
             font-family: 'Courier New', Courier, monospace;
             color: #fff;
+            user-select: none;
         }
 
         #webgl-container {
@@ -24,58 +26,112 @@
             z-index: 1;
         }
 
-        /* 高質感毛玻璃 UI 容器 */
-        #hud-ui {
+        /* -------------------------------------
+           2D HUD 介面元素 (螢幕最外層)
+        -------------------------------------- */
+        .hud-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 5;
+            pointer-events: none; /* 讓滑鼠可以穿透點擊按鈕 */
+        }
+
+        /* 四個角落的定位框 */
+        .bracket {
+            position: absolute;
+            width: 80px; height: 80px;
+            border: 2px solid rgba(0, 243, 255, 0.5);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2) inset;
+        }
+        .top-left { top: 30px; left: 30px; border-right: none; border-bottom: none; }
+        .top-right { top: 30px; right: 30px; border-left: none; border-bottom: none; }
+        .bottom-left { bottom: 30px; left: 30px; border-right: none; border-top: none; }
+        .bottom-right { bottom: 30px; right: 30px; border-left: none; border-top: none; }
+
+        /* 左側系統數據流 */
+        .sys-data {
+            position: absolute;
+            bottom: 40px; left: 50px;
+            color: #00f3ff;
+            font-size: 12px;
+            letter-spacing: 2px;
+            line-height: 1.5;
+            opacity: 0.8;
+            text-shadow: 0 0 5px #00f3ff;
+        }
+
+        /* 右上角警告標示 */
+        .sys-warning {
+            position: absolute;
+            top: 50px; right: 50px;
+            color: #b026ff;
+            font-size: 14px;
+            letter-spacing: 3px;
+            border: 1px solid #b026ff;
+            padding: 5px 10px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* -------------------------------------
+           中央登入 UI (毛玻璃)
+        -------------------------------------- */
+        #login-ui {
+            position: absolute;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px;
-            background: rgba(0, 20, 40, 0.2);
-            backdrop-filter: blur(12px); /* 毛玻璃特效 */
+            padding: 40px 60px;
+            background: rgba(0, 20, 40, 0.15);
+            backdrop-filter: blur(8px);
             border: 1px solid rgba(0, 243, 255, 0.3);
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+            border-radius: 5px;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1), inset 0 0 20px rgba(0, 243, 255, 0.05);
         }
 
         .title {
-            font-size: 2rem;
-            letter-spacing: 10px;
+            font-size: 2.5rem;
+            letter-spacing: 12px;
             margin-bottom: 5px;
             color: #fff;
-            text-shadow: 0 0 10px #00f3ff;
+            text-shadow: 0 0 15px #00f3ff;
+            font-weight: bold;
         }
 
         .subtitle {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #00f3ff;
-            letter-spacing: 5px;
-            margin-bottom: 30px;
-            opacity: 0.8;
+            letter-spacing: 6px;
+            margin-bottom: 40px;
+            opacity: 0.9;
         }
 
-        /* 科技感按鈕 */
         .btn-engage {
-            background: transparent;
+            background: rgba(0, 243, 255, 0.05);
             color: #00f3ff;
             border: 1px solid #00f3ff;
-            padding: 15px 40px;
+            padding: 15px 50px;
             font-size: 1.2rem;
-            letter-spacing: 4px;
+            letter-spacing: 5px;
             cursor: pointer;
             position: relative;
             overflow: hidden;
             transition: all 0.3s ease;
+            text-transform: uppercase;
         }
 
         .btn-engage:hover {
-            background: rgba(0, 243, 255, 0.2);
-            box-shadow: 0 0 20px #00f3ff;
-            text-shadow: 0 0 5px #fff;
+            background: rgba(0, 243, 255, 0.25);
+            box-shadow: 0 0 25px #00f3ff;
+            text-shadow: 0 0 8px #fff;
+            transform: scale(1.05);
         }
     </style>
 
@@ -90,11 +146,29 @@
 </head>
 <body>
 
+    <!-- 3D 背景容器 -->
     <div id="webgl-container"></div>
 
-    <div id="hud-ui">
-        <div class="title">SYSTEM CORE</div>
-        <div class="subtitle">AWAITING INITIALIZATION</div>
+    <!-- 2D HUD 疊加層 -->
+    <div class="hud-overlay">
+        <div class="bracket top-left"></div>
+        <div class="bracket top-right"></div>
+        <div class="bracket bottom-left"></div>
+        <div class="bracket bottom-right"></div>
+        
+        <div class="sys-warning">SECURE LINK</div>
+        <div class="sys-data">
+            MEM_ALLOC: 0x00F8A<br>
+            CORE_TEMP: 32.4°C<br>
+            UPLINK: STABLE<br>
+            <span id="random-data">SEC_HASH: 8F92A...</span>
+        </div>
+    </div>
+
+    <!-- 中央登入面板 -->
+    <div id="login-ui">
+        <div class="title">NEXUS CORE</div>
+        <div class="subtitle">AUTHORIZATION REQUIRED</div>
         <button class="btn-engage" id="login-btn">ENGAGE</button>
     </div>
 
@@ -106,46 +180,41 @@
 
         // --- 1. 基礎場景設定 ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000511, 0.03); // 增加深邃宇宙的霧氣
+        scene.fog = new THREE.FogExp2(0x000511, 0.02);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 25;
+        camera.position.z = 30;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('webgl-container').appendChild(renderer.domElement);
 
-        // --- 2. 電影級發光後期處理 (Bloom Pass) ---
+        // --- 2. 電影級發光 (Bloom) ---
         const renderScene = new RenderPass(scene, camera);
-        // 參數：解析度、發光強度、發光半徑、發光門檻
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.0, 0.5, 0.1);
-        
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.5, 0.4, 0.1);
         const composer = new EffectComposer(renderer);
         composer.addPass(renderScene);
         composer.addPass(bloomPass);
 
-        // --- 3. 核心著色器 (Shader) 魔法：液態能量球 ---
-        // 這是讓球體會像生命體一樣呼吸變形的關鍵
+        // --- 3. 核心 Shader (液態能量球) ---
         const coreUniforms = {
             uTime: { value: 0.0 },
-            uDistortion: { value: 1.5 }, // 變形程度
+            uDistortion: { value: 1.2 },
             uColor: { value: new THREE.Color('#00f3ff') }
         };
 
         const coreMaterial = new THREE.ShaderMaterial({
             uniforms: coreUniforms,
-            wireframe: true, // 線框模式更有科技感
+            wireframe: true,
             transparent: true,
             vertexShader: `
                 uniform float uTime;
                 uniform float uDistortion;
                 varying vec3 vNormal;
-                
                 void main() {
                     vNormal = normal;
                     vec3 pos = position;
-                    // 使用三角函數與時間製造有機的擾動
                     float noise = sin(pos.x * 2.0 + uTime) * sin(pos.y * 2.0 + uTime) * sin(pos.z * 2.0 + uTime);
                     pos += normal * noise * uDistortion;
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -154,94 +223,135 @@
             fragmentShader: `
                 uniform vec3 uColor;
                 varying vec3 vNormal;
-                
                 void main() {
-                    // 讓邊緣發光更亮 (Fresnel Effect)
                     float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
                     gl_FragColor = vec4(uColor * (intensity * 3.0 + 0.5), 1.0);
                 }
             `
         });
-
-        const coreGeometry = new THREE.IcosahedronGeometry(5, 16); // 高面數多面體
+        const coreGeometry = new THREE.IcosahedronGeometry(4, 16);
         const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
         scene.add(coreMesh);
 
-        // --- 4. 背景星塵資料流 ---
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 3000;
-        const posArray = new Float32Array(particlesCount * 3);
+        // --- 4. 【全新加入】3D HUD 旋轉圓環 ---
+        const hudRingsGroup = new THREE.Group();
+        scene.add(hudRingsGroup);
 
+        // 圓環 1：內層細線環 (逆時針)
+        const ring1Geo = new THREE.RingGeometry(6, 6.1, 64);
+        const ring1Mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+        const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+        hudRingsGroup.add(ring1);
+
+        // 圓環 2：中層虛線軌道 (順時針)
+        const circleGeo = new THREE.CircleGeometry(7.5, 64);
+        const edges = new THREE.EdgesGeometry(circleGeo);
+        // 使用 LineDashedMaterial 製作科技感的刻度
+        const lineMat = new THREE.LineDashedMaterial({ color: 0xb026ff, dashSize: 0.4, gapSize: 0.2, linewidth: 2 });
+        const ring2 = new THREE.LineSegments(edges, lineMat);
+        ring2.computeLineDistances(); // 虛線必須計算距離
+        hudRingsGroup.add(ring2);
+
+        // 圓環 3：外圍資料節點環 (點狀)
+        const ring3Geo = new THREE.BufferGeometry();
+        const nodeCount = 36;
+        const ring3Pos = new Float32Array(nodeCount * 3);
+        for(let i=0; i<nodeCount; i++) {
+            const theta = (i / nodeCount) * Math.PI * 2;
+            ring3Pos[i*3] = Math.cos(theta) * 9;
+            ring3Pos[i*3+1] = Math.sin(theta) * 9;
+            ring3Pos[i*3+2] = 0;
+        }
+        ring3Geo.setAttribute('position', new THREE.BufferAttribute(ring3Pos, 3));
+        const ring3Mat = new THREE.PointsMaterial({ color: 0x00f3ff, size: 0.15, transparent: true, opacity: 0.8 });
+        const ring3 = new THREE.Points(ring3Geo, ring3Mat);
+        hudRingsGroup.add(ring3);
+
+        // --- 5. 背景星塵資料流 ---
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 2000;
+        const posArray = new Float32Array(particlesCount * 3);
         for(let i = 0; i < particlesCount * 3; i++) {
-            // 讓星塵分佈在管狀空間中
-            posArray[i] = (Math.random() - 0.5) * 100;
+            posArray[i] = (Math.random() - 0.5) * 120;
         }
         particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
         const particlesMaterial = new THREE.PointsMaterial({
-            size: 0.1,
-            color: '#b026ff', // 紫色星塵，與青色核心產生對比
-            transparent: true,
-            blending: THREE.AdditiveBlending
+            size: 0.1, color: '#b026ff', transparent: true, blending: THREE.AdditiveBlending
         });
         const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
         scene.add(particlesMesh);
 
-        // --- 5. 動畫迴圈 ---
+        // --- 6. 動畫迴圈 ---
         const clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
 
-            // 更新 Shader 裡面的時間，讓球體蠕動
+            // 核心蠕動與自轉
             coreMaterial.uniforms.uTime.value = elapsedTime * 2.0;
-            coreMesh.rotation.y += 0.005;
+            coreMesh.rotation.y += 0.004;
             coreMesh.rotation.x += 0.002;
 
-            // 讓星塵不斷往畫面方向飛 (資料流效果)
+            // HUD 圓環各自旋轉 (製造複雜的機械感)
+            ring1.rotation.z -= 0.005; // 逆時針
+            ring2.rotation.z += 0.003; // 順時針
+            ring3.rotation.z -= 0.001; // 緩慢逆時針
+
+            // 整個環組稍微傾斜，帶出 3D 空間感
+            hudRingsGroup.rotation.x = Math.sin(elapsedTime * 0.5) * 0.1;
+            hudRingsGroup.rotation.y = Math.cos(elapsedTime * 0.3) * 0.1;
+
+            // 星塵往前飛
             const positions = particlesGeometry.attributes.position.array;
             for(let i = 2; i < particlesCount * 3; i += 3) {
-                positions[i] += 0.1; // Z軸移動
-                if(positions[i] > 30) positions[i] = -50; // 超過鏡頭就移回遠處
+                positions[i] += 0.15;
+                if(positions[i] > 30) positions[i] = -60;
             }
             particlesGeometry.attributes.position.needsUpdate = true;
-            particlesMesh.rotation.z += 0.001;
 
-            // 使用 Composer 渲染 (為了 Bloom 效果)
             composer.render();
         }
         animate();
 
-        // --- 6. GSAP 頂級進場/點擊互動動畫 ---
-        // 初始 UI 浮現動畫
-        gsap.from("#hud-ui", { duration: 2, y: 50, opacity: 0, ease: "power3.out", delay: 0.5 });
-        gsap.from(coreMesh.scale, { duration: 3, x: 0, y: 0, z: 0, ease: "elastic.out(1, 0.3)" });
+        // 模擬左下角亂碼數據跳動
+        setInterval(() => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let hash = 'SEC_HASH: ';
+            for(let i=0; i<8; i++) hash += chars.charAt(Math.floor(Math.random() * chars.length));
+            document.getElementById('random-data').innerText = hash;
+        }, 100);
+
+        // --- 7. GSAP 頂級進場/點擊互動動畫 ---
+        gsap.from("#login-ui", { duration: 1.5, y: 30, opacity: 0, ease: "power3.out", delay: 0.2 });
+        gsap.from(".bracket", { duration: 1, scale: 2, opacity: 0, stagger: 0.1, ease: "back.out(1.5)" });
+        gsap.from(hudRingsGroup.scale, { duration: 2, x: 0, y: 0, z: 0, ease: "elastic.out(1, 0.4)", delay: 0.5 });
 
         // 點擊「ENGAGE」觸發超扯躍遷動畫
         document.getElementById('login-btn').addEventListener('click', () => {
             const tl = gsap.timeline();
 
-            // 1. UI 震動後模糊消失
-            tl.to("#hud-ui", { duration: 0.5, scale: 1.1, opacity: 0, filter: "blur(20px)", ease: "power2.in" });
+            // 1. 2D UI 消失
+            tl.to("#login-ui, .hud-overlay", { duration: 0.4, scale: 1.1, opacity: 0, ease: "power2.in" });
             
-            // 2. 核心超載 (變大、變形劇烈、顏色變紅/紫)
-            tl.to(coreMaterial.uniforms.uDistortion, { duration: 1.5, value: 5.0, ease: "power2.inOut" }, "-=0.2");
-            tl.to(coreMaterial.uniforms.uColor.value, { duration: 1.5, r: 1, g: 0.1, b: 0.8 }, "-=1.5");
-            tl.to(coreMesh.rotation, { duration: 2, y: "+=10", x: "+=5", ease: "power2.in" }, "-=1.5");
-            
-            // 3. 鏡頭躍遷 (拉近穿透核心，星空加速)
-            tl.to(camera.position, { duration: 2, z: -10, ease: "power3.in" }, "-=1.0");
-            tl.to(bloomPass, { duration: 2, strength: 8.0, ease: "power2.in" }, "-=2.0");
+            // 2. HUD 環加速旋轉並擴散
+            tl.to(hudRingsGroup.rotation, { duration: 2, z: "+=5", ease: "power2.in" }, "-=0.2");
+            tl.to(hudRingsGroup.scale, { duration: 1.5, x: 10, y: 10, z: 10, opacity: 0, ease: "power2.in" }, "-=1.5");
 
-            // 動畫結束後可以接轉址 (這裡用 alert 示意)
+            // 3. 核心超載
+            tl.to(coreMaterial.uniforms.uDistortion, { duration: 1.5, value: 5.0, ease: "power2.inOut" }, "-=1.5");
+            tl.to(coreMaterial.uniforms.uColor.value, { duration: 1.5, r: 1, g: 0.1, b: 0.8 }, "-=1.5");
+            
+            // 4. 鏡頭躍遷
+            tl.to(camera.position, { duration: 2, z: -5, ease: "power3.in" }, "-=1.2");
+            tl.to(bloomPass, { duration: 2, strength: 10.0, ease: "power2.in" }, "-=1.5");
+
             tl.call(() => {
-                // window.location.href = '你的下一個網頁.html';
-                alert("SYSTEM BREACHED. WELCOME.");
+                alert("SYSTEM BREACHED. ACCESS GRANTED.");
+                // 這裡可以接 window.location.href 轉跳到你的網頁
             });
         });
 
-        // 視窗縮放處理
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
