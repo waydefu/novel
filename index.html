@@ -3,107 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexcore Tactical HUD v4.0 - Actualized</title>
-    <!-- 引入 GSAP 動畫庫 -->
+    <title>Nexcore HUD - SAO Link Start Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     
     <style>
         :root {
             --cyan: #00f3ff;
             --dark-cyan: rgba(0, 243, 255, 0.2);
-            --faint-cyan: rgba(0, 243, 255, 0.05);
-            --purple: #b026ff;
             --bg: #010409;
+            --sao-green: #00ff66; /* SAO 確認成功的綠色 */
             --font: 'Courier New', Courier, monospace;
         }
 
-        body {
-            margin: 0; overflow: hidden;
-            background-color: var(--bg);
-            font-family: var(--font);
-            color: #fff; user-select: none;
-        }
-
-        #webgl-container {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
-        }
+        body { margin: 0; overflow: hidden; background-color: var(--bg); font-family: var(--font); color: #fff; user-select: none; }
+        #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
         /* -------------------------------------
-           高複雜度 2D Tactical HUD Overlay
+           基礎 Tactical HUD (簡化版，專注於中央)
         -------------------------------------- */
         .hud-overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 5;
-            pointer-events: none; padding: 20px;
-            display: grid;
-            grid-template-columns: 280px 1fr 280px;
-            grid-template-rows: 80px 1fr 140px;
-            gap: 15px;
-            box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
 
-        /* 通用面板樣式 */
-        .hud-panel {
-            background: rgba(0, 5, 15, 0.6);
-            backdrop-filter: blur(5px);
-            border: 1px solid var(--dark-cyan);
-            border-radius: 2px;
-            padding: 10px;
-            opacity: 0; /* GSAP 進場動畫 */
-        }
+        .main-title { font-size: 32px; letter-spacing: 15px; font-weight: bold; text-shadow: 0 0 10px var(--cyan); margin-bottom: 300px; color: var(--cyan); }
 
-        .panel-header {
-            color: var(--cyan); font-size: 12px; font-weight: bold;
-            letter-spacing: 2px; text-transform: uppercase;
-            border-bottom: 1px solid var(--dark-cyan);
-            padding-bottom: 5px; margin-bottom: 8px;
-            display: flex; justify-content: space-between;
-        }
-
-        .data-row { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255, 255, 255, 0.8); margin-bottom: 3px; }
-        .data-val { color: var(--cyan); font-weight: bold; }
-
-        /* --- 上方區域 --- */
-        .header-left { grid-column: 1; grid-row: 1; display: flex; align-items: center; justify-content: space-between;}
-        .system-status { font-size: 14px; letter-spacing: 4px; color: var(--cyan); text-shadow: 0 0 5px var(--cyan); }
-        .header-center { grid-column: 2; grid-row: 1; border: none; background: none; display: flex; justify-content: center; align-items: center; border-bottom: 2px solid var(--cyan); border-radius: 0;}
-        .header-center .main-title { font-size: 28px; letter-spacing: 15px; font-weight: bold; text-shadow: 0 0 10px var(--cyan); }
-
-        /* --- 左側數據區域 --- */
-        .left-col { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 10px; }
-        
-        /* 真實時間同步面板 */
-        .time-panel .data-val { font-size: 16px; letter-spacing: 1px; }
-
-        /* 瀏覽器與系統資訊面板 */
-        .sys-info-panel {}
-
-        /* 下方區域 */
-        .footer-center { grid-column: 2; grid-row: 3; align-self: end; border-bottom: none; display: flex; justify-content: center; padding-bottom: 30px; }
-
-        /* 按鈕：保持中央，但移除了亂數特效 */
         .btn-engage {
-            pointer-events: auto; background: transparent; color: var(--cyan);
-            border: 1px solid var(--cyan); padding: 12px 60px; font-size: 1.1rem;
-            letter-spacing: 8px; cursor: pointer; text-transform: uppercase;
-            transition: all 0.3s ease;
+            pointer-events: auto; background: rgba(0, 5, 15, 0.6); backdrop-filter: blur(5px);
+            color: var(--cyan); border: 2px solid var(--cyan); padding: 15px 60px; font-size: 1.5rem;
+            letter-spacing: 10px; cursor: pointer; text-transform: uppercase;
+            box-shadow: 0 0 15px var(--dark-cyan) inset, 0 0 15px var(--dark-cyan);
+            transition: all 0.3s ease; position: relative;
         }
-        .btn-engage:hover { background: var(--dark-cyan); box-shadow: 0 0 20px var(--cyan); transform: scale(1.02); }
+        .btn-engage:hover { background: var(--dark-cyan); transform: scale(1.05); }
 
-        /* --- 右側數據區域 --- */
-        .right-col { grid-column: 3; grid-row: 2 / span 2; display: flex; flex-direction: column; gap: 10px; }
+        /* -------------------------------------
+           SAO 登入五圈確認介面 (初始隱藏)
+        -------------------------------------- */
+        #sao-sequence {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 10; display: none; /* 預設隱藏 */
+            width: 400px; height: 400px;
+        }
 
-        /* 地理位置同步面板 (fallback to 台灣新北市淡水區數據) */
-        .geo-panel {}
+        /* 5個同心圓 */
+        .sao-ring {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            border: 2px solid var(--sao-green); border-radius: 50%;
+            box-shadow: 0 0 20px var(--sao-green), inset 0 0 20px var(--sao-green);
+            opacity: 0;
+        }
+        #ring-1 { width: 100px; height: 100px; }
+        #ring-2 { width: 160px; height: 160px; }
+        #ring-3 { width: 220px; height: 220px; border-style: dashed; }
+        #ring-4 { width: 280px; height: 280px; }
+        #ring-5 { width: 340px; height: 340px; border: 4px double var(--sao-green); }
 
-        /* 模擬直條圖/扇形圖面板 (用 CSS 模擬) */
-        .graph-panel { flex-grow: 1; }
-        .bar-chart { display: flex; align-items: end; gap: 4px; height: 100px; margin-top: 10px; }
-        .bar { width: 15px; background: var(--cyan); opacity: 0.8; height: 10px; transition: height 0.3s; }
-        .bar-chart-labels { display: flex; justify-content: space-between; font-size: 8px; margin-top: 2px; }
+        /* 感官確認列表 */
+        .sao-list {
+            position: absolute; top: 50%; left: 120%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .sao-item {
+            font-size: 20px; letter-spacing: 5px; color: transparent;
+            display: flex; justify-content: space-between; width: 200px;
+            text-shadow: 0 0 10px transparent;
+        }
+        .sao-item span { color: transparent; font-weight: bold; }
 
+        /* 中央 LINK START 文字 */
+        .link-start-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 36px; font-weight: bold; color: var(--sao-green);
+            letter-spacing: 12px; text-shadow: 0 0 20px var(--sao-green);
+            opacity: 0; white-space: nowrap;
+        }
+
+        /* 全白閃屏特效 */
+        #white-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 999; opacity: 0; pointer-events: none;
+        }
     </style>
 
-    <!-- 告訴瀏覽器去哪裡抓 Three.js 和後期處理套件 -->
     <script type="importmap">
     {
         "imports": {
@@ -115,84 +97,30 @@
 </head>
 <body>
 
-    <!-- 3D 背景容器 -->
     <div id="webgl-container"></div>
+    <div id="white-flash"></div>
 
-    <!-- 2D Tactical HUD Overlay -->
-    <div class="hud-overlay">
-        <!-- 上方 -->
-        <div class="hud-panel header-left">
-            <div class="system-status">ACTIVE</div>
-            <div style="font-size: 10px;">TACTICAL<br>INTERFACE</div>
-        </div>
-        <div class="header-center">
-            <div class="main-title">NEXCORE TACTICAL</div>
-        </div>
+    <!-- 基礎戰術 HUD -->
+    <div class="hud-overlay" id="main-hud">
+        <div class="main-title">SYSTEM STANDBY</div>
+        <button class="btn-engage" id="login-btn">LINK START</button>
+    </div>
 
-        <!-- 左側數據區域 -->
-        <div class="left-col">
-            <!-- 真實時間同步面板 -->
-            <div class="hud-panel time-panel">
-                <div class="panel-header"><span>CLOCK_SYNC / LOCAL</span><span>REAL_TIME</span></div>
-                <div class="data-row"><span>DATE (YYYY-MM-DD)</span><span class="data-val" id="local-date">----</span></div>
-                <div class="data-row"><span>TIME (HH:MM:SS)</span><span class="data-val" id="local-time">----</span></div>
-                <div class="data-row"><span>TIMESTAMP</span><span class="data-val" id="local-ts" style="font-size: 10px;">----</span></div>
-                <br>
-                <div class="panel-header"><span>CLOCK_SYNC / UTC</span></div>
-                <div class="data-row"><span>UTC TIME</span><span class="data-val" id="utc-time">----</span></div>
-            </div>
-
-            <!-- 瀏覽器與系統資訊面板 -->
-            <div class="hud-panel sys-info-panel">
-                <div class="panel-header"><span>SYS_ANALYSIS / HARDWARE</span></div>
-                <div class="data-row"><span>PLATFORM</span><span class="data-val" id="sys-platform">----</span></div>
-                <div class="data-row"><span>CORES (LOGICAL)</span><span class="data-val" id="sys-cores">----</span></div>
-                <div class="data-row"><span>LANGUAGE</span><span class="data-val" id="sys-lang">----</span></div>
-                <br>
-                <div class="panel-header"><span>RENDER_CONTEXT / BROWSER</span></div>
-                <div class="data-row"><span>AGENT</span><span class="data-val" id="sys-agent" style="font-size: 8px;">----</span></div>
-                <div class="data-row"><span>COOKIES_ENABLED</span><span class="data-val" id="sys-cookies">----</span></div>
-            </div>
-        </div>
-
-        <!-- 按鈕區域 -->
-        <div class="footer-center">
-            <button class="btn-engage" id="login-btn">SYNCHRONIZE CORE</button>
-        </div>
-
-        <!-- 右側數據區域 -->
-        <div class="right-col">
-            <!-- 解析度面板 -->
-            <div class="hud-panel res-panel">
-                <div class="panel-header"><span>RES_SYNC / CURRENT</span></div>
-                <div class="data-row"><span>SCREEN_WIDTH</span><span class="data-val" id="res-scr-w">----</span></div>
-                <div class="data-row"><span>SCREEN_HEIGHT</span><span class="data-val" id="res-scr-h">----</span></div>
-                <div class="data-row"><span>WINDOW_WIDTH</span><span class="data-val" id="res-win-w">----</span></div>
-                <div class="data-row"><span>WINDOW_HEIGHT</span><span class="data-val" id="res-win-h">----</span></div>
-                <div class="data-row"><span>PIXEL_RATIO</span><span class="data-val" id="res-ratio">----</span></div>
-            </div>
-
-            <!-- 地理位置同步面板 (Fallback) -->
-            <div class="hud-panel geo-panel">
-                <div class="panel-header"><span>GEO_SYNC / LOCATION</span><span style="color:var(--purple)">[ fallback ]</span></div>
-                <div class="data-row"><span>REGION</span><span class="data-val">NEW TAIPEI CITY</span></div>
-                <div class="data-row"><span>DISTRICT</span><span class="data-val">TAMSUI</span></div>
-                <div class="data-row"><span>LATITUDE / Fallback</span><span class="data-val">25.17</span></div>
-                <div class="data-row"><span>LONGITUDE / Fallback</span><span class="data-val">121.44</span></div>
-                <div class="data-row"><span>TIMEZONE_OFFSET</span><span class="data-val" id="geo-tz">----</span></div>
-            </div>
-
-            <!-- 模擬直條圖/扇形圖面板 (用 CSS 模擬數據跳動) -->
-            <div class="hud-panel graph-panel">
-                <div class="panel-header"><span>CORE_LOAD / ANALYSIS</span></div>
-                <div class="bar-chart">
-                    <div class="bar" style="height:70%"></div><div class="bar" style="height:90%"></div><div class="bar" style="height:30%"></div>
-                    <div class="bar" style="height:50%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:20%"></div>
-                    <div class="bar" style="height:60%"></div><div class="bar" style="height:95%"></div><div class="bar" style="height:40%"></div>
-                    <div class="bar" style="height:75%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:35%"></div>
-                </div>
-                <div class="bar-chart-labels"><span>SUB_01</span><span>CORE_T</span><span>SUB_12</span></div>
-            </div>
+    <!-- SAO 登入動畫 UI -->
+    <div id="sao-sequence">
+        <div class="sao-ring" id="ring-5"></div>
+        <div class="sao-ring" id="ring-4"></div>
+        <div class="sao-ring" id="ring-3"></div>
+        <div class="sao-ring" id="ring-2"></div>
+        <div class="sao-ring" id="ring-1"></div>
+        <div class="link-start-text">FULL DIVE</div>
+        
+        <div class="sao-list">
+            <div class="sao-item" id="sense-1">SIGHT <span>OK</span></div>
+            <div class="sao-item" id="sense-2">HEARING <span>OK</span></div>
+            <div class="sao-item" id="sense-3">TOUCH <span>OK</span></div>
+            <div class="sao-item" id="sense-4">TASTE <span>OK</span></div>
+            <div class="sao-item" id="sense-5">SMELL <span>OK</span></div>
         </div>
     </div>
 
@@ -202,178 +130,160 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        // --- 1. 基礎場景設定 ---
+        // --- 1. 基礎場景 ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000511, 0.02);
-
+        scene.fog = new THREE.FogExp2(0x000511, 0.015);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 40; // 稍微拉遠
+        camera.position.z = 40;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('webgl-container').appendChild(renderer.domElement);
 
-        // --- 2. 【核心升級】調整電影級發光 (Bloom) ---
+        // --- 2. 後期處理 (Bloom) ---
         const renderScene = new RenderPass(scene, camera);
-        // 大幅降低泛光強度 (2.5 -> 1.5) 和半徑 (0.4 -> 0.3)，增加門檻 (0.1 -> 0.2)
-        // 這會讓核心看起來清晰許多，突顯結構
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.3, 0.2);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.3, 0.1);
         const composer = new EffectComposer(renderer);
         composer.addPass(renderScene);
         composer.addPass(bloomPass);
 
-        // --- 3. 【核心升級】優化核心 Shader (液態能量球) ---
-        const coreUniforms = {
-            uTime: { value: 0.0 },
-            uDistortion: { value: 0.6 }, // 降低變形程度 (1.2 -> 0.6)，使其更受控
-            uColor: { value: new THREE.Color('#00f3ff') }
-        };
-
+        // --- 3. 核心 Shader (液態能量球) ---
+        const coreUniforms = { uTime: { value: 0.0 }, uDistortion: { value: 0.8 }, uColor: { value: new THREE.Color('#00f3ff') } };
         const coreMaterial = new THREE.ShaderMaterial({
-            uniforms: coreUniforms,
-            wireframe: true, // 保持線框，J.A.R.V.I.S.風格
-            transparent: true,
+            uniforms: coreUniforms, wireframe: true, transparent: true,
             vertexShader: `
-                uniform float uTime;
-                uniform float uDistortion;
-                varying vec3 vNormal;
+                uniform float uTime; uniform float uDistortion; varying vec3 vNormal;
                 void main() {
-                    vNormal = normal;
-                    vec3 pos = position;
-                    float noise = sin(pos.x * 3.0 + uTime) * sin(pos.y * 3.0 + uTime) * sin(pos.z * 3.0 + uTime);
+                    vNormal = normal; vec3 pos = position;
+                    float noise = sin(pos.x * 2.0 + uTime) * sin(pos.y * 2.0 + uTime) * sin(pos.z * 2.0 + uTime);
                     pos += normal * noise * uDistortion;
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
                 }
             `,
             fragmentShader: `
-                uniform vec3 uColor;
-                varying vec3 vNormal;
+                uniform vec3 uColor; varying vec3 vNormal;
                 void main() {
-                    // Fresnel Effect，突顯幾何結構邊緣
-                    float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 1.0)), 1.5);
-                    // 降低基礎亮度 multiplier
-                    gl_FragColor = vec4(uColor * (intensity * 2.0 + 0.3), 0.7);
+                    float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+                    gl_FragColor = vec4(uColor * (intensity * 3.0 + 0.5), 0.8);
                 }
             `
         });
-        const coreGeometry = new THREE.IcosahedronGeometry(4, 16);
-        const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
+        const coreMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(4, 16), coreMaterial);
         scene.add(coreMesh);
 
-        // --- 4. 【升級】複雜化 3D HUD 旋轉圓環 ---
-        const hudRingsGroup = new THREE.Group();
-        scene.add(hudRingsGroup);
+        // --- 4. 【新增】極速躍遷隧道 (Wireframe Tunnel) ---
+        // 建立一個巨大的圓柱體，只顯示科技線框
+        const tunnelGeo = new THREE.CylinderGeometry(20, 20, 200, 32, 32, true);
+        const tunnelMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true, transparent: true, opacity: 0 }); // 初始不可見
+        const tunnelMesh = new THREE.Mesh(tunnelGeo, tunnelMat);
+        tunnelMesh.rotation.x = Math.PI / 2; // 讓圓柱體躺平，朝向相機
+        scene.add(tunnelMesh);
 
-        // 圓環 1：內層虛線軌道
-        const ringGeo1 = new THREE.TorusGeometry(8, 0.05, 16, 100);
-        const edges1 = new THREE.EdgesGeometry(ringGeo1);
-        const lineMat1 = new THREE.LineDashedMaterial({ color: 0x00f3ff, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
-        const ring1 = new THREE.LineSegments(edges1, lineMat1);
-        ring1.computeLineDistances();
-        hudRingsGroup.add(ring1);
-
-        // 圓環 2：中層刻度環
-        const ringGeo2 = new THREE.CircleGeometry(10, 64);
-        const edges2 = new THREE.EdgesGeometry(ringGeo2);
-        const lineMat2 = new THREE.LineDashedMaterial({ color: 0xb026ff, dashSize: 0.5, gapSize: 0.3 });
-        const ring2 = new THREE.LineSegments(edges2, lineMat2);
-        ring2.computeLineDistances();
-        hudRingsGroup.add(ring2);
-
-        // 圓環 3：外圍節點環
-        const ringGeo3 = new THREE.RingGeometry(12, 12.1, 32);
-        const edges3 = new THREE.EdgesGeometry(ringGeo3);
-        const lineMat3 = new THREE.LineBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.4 });
-        const ring3 = new THREE.LineSegments(edges3, lineMat3);
-        hudRingsGroup.add(ring3);
-
-        // --- 5. 背景星塵資料流 ---
+        // --- 5. 背景星塵 ---
         const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 1500;
+        const particlesCount = 2000;
         const posArray = new Float32Array(particlesCount * 3);
         for(let i = 0; i < particlesCount * 3; i++) { posArray[i] = (Math.random() - 0.5) * 150; }
         particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const particlesMaterial = new THREE.PointsMaterial({ size: 0.1, color: '#b026ff', transparent: true });
+        const particlesMaterial = new THREE.PointsMaterial({ size: 0.2, color: '#00f3ff', transparent: true, blending: THREE.AdditiveBlending });
         const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
         scene.add(particlesMesh);
 
-        // --- 6. 【全新升級】同步真實數據函式 ---
-        function syncRealData() {
-            const now = new Date();
-
-            // CLOCK_SYNC / LOCAL
-            document.getElementById('local-date').innerText = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-            document.getElementById('local-time').innerText = now.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            document.getElementById('local-ts').innerText = now.getTime();
-
-            // CLOCK_SYNC / UTC
-            document.getElementById('utc-time').innerText = now.toUTCString().slice(17, 25);
-
-            // RES_SYNC
-            document.getElementById('res-scr-w').innerText = screen.width;
-            document.getElementById('res-scr-h').innerText = screen.width;
-            document.getElementById('res-win-w').innerText = window.innerWidth;
-            document.getElementById('res-win-h').innerText = window.innerHeight;
-            document.getElementById('res-ratio').innerText = window.devicePixelRatio.toFixed(2);
-
-            // GEO_SYNC (Fallback)
-            document.getElementById('geo-tz').innerText = now.getTimezoneOffset();
-
-            // SYS_ANALYSIS
-            document.getElementById('sys-platform').innerText = navigator.platform;
-            document.getElementById('sys-cores').innerText = navigator.hardwareConcurrency || '----';
-            document.getElementById('sys-lang').innerText = navigator.language;
-            document.getElementById('sys-cookies').innerText = navigator.cookieEnabled ? 'YES' : 'NO';
-            const agentStr = navigator.userAgent;
-            document.getElementById('sys-agent').innerText = agentStr.length > 50 ? agentStr.substring(0,47) + '...' : agentStr;
-
-        }
-        // 初始同步一次
-        syncRealData();
-        // 每秒更新一次
-        setInterval(syncRealData, 1000);
-
-        // --- 7. 動畫迴圈 ---
+        // --- 6. 動畫迴圈與狀態變數 ---
         const clock = new THREE.Clock();
+        // 用一個物件來控制粒子的飛行速度，方便 GSAP 操作
+        const simState = { warpSpeed: 0.1, tunnelZ: 0 }; 
 
         function animate() {
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
 
-            coreMaterial.uniforms.uTime.value = elapsedTime * 2.0;
-            coreMesh.rotation.y += 0.003; coreMesh.rotation.x += 0.001;
+            // 核心蠕動
+            coreUniforms.uTime.value = elapsedTime * 3.0;
+            coreMesh.rotation.y += 0.005; coreMesh.rotation.x += 0.002;
 
-            // HUD 圓環旋轉
-            ring1.rotation.z -= 0.003; ring2.rotation.z += 0.002; ring3.rotation.z -= 0.001;
-            hudRingsGroup.rotation.x = Math.sin(elapsedTime * 0.4) * 0.08;
+            // 隧道無限滾動效果 (改變位置並重置)
+            simState.tunnelZ += simState.warpSpeed * 2;
+            if(simState.tunnelZ > 10) simState.tunnelZ = 0; // 無縫接軌
+            tunnelMesh.position.z = simState.tunnelZ;
 
-            // 星塵往 Z 軸方向飛
+            // 星塵高速飛行
             const positions = particlesGeometry.attributes.position.array;
             for(let i = 2; i < particlesCount * 3; i += 3) {
-                positions[i] += 0.2; // 飛越速度
-                if(positions[i] > 30) positions[i] = -80;
+                positions[i] += simState.warpSpeed; 
+                if(positions[i] > 40) positions[i] = -100;
             }
             particlesGeometry.attributes.position.needsUpdate = true;
-
-            // 模擬 CORE_LOAD 直條圖跳動 (純 2D)
-            const bars = document.querySelectorAll('.bar');
-            bars.forEach(bar => {
-                if(Math.random() > 0.8) bar.style.height = (Math.random() * 80 + 20) + '%';
-            });
 
             composer.render();
         }
         animate();
 
-        // --- 8. GSAP Tactical 進場動畫 ---
-        gsap.to(".hud-panel", { duration: 1.2, opacity: 1, y: 0, from: 30, stagger: 0.1, ease: "power3.out" });
-        gsap.from(hudRingsGroup.scale, { duration: 2, x: 0, y: 0, z: 0, ease: "elastic.out(1, 0.4)", delay: 0.5 });
-
-        // 按鈕：保持中央按鈕行為，但移除了亂數特效
+        // --- 7. 【電影級分鏡】GSAP 點擊動畫 ---
         document.getElementById('login-btn').addEventListener('click', () => {
-            alert("SYSTEM SYNCHRONIZED. ACCESS GRANTED.");
-            // 這裡可以接轉跳：window.location.href = '你的網頁.html';
+            const tl = gsap.timeline();
+
+            // [Phase 1: 球體砸向按鈕 (Smash)]
+            // 讓 HUD 文字先淡出
+            tl.to(".main-title", { duration: 0.3, opacity: 0, y: -20, ease: "power2.in" });
+            
+            // 核心暴走變形，並往下、往前「砸向」螢幕上的按鈕位置！
+            tl.to(coreUniforms.uDistortion, { duration: 0.5, value: 5.0, ease: "power2.in" }, 0);
+            tl.to(coreMesh.position, { duration: 0.5, y: -15, z: 35, ease: "power4.in" }, 0); 
+            
+            // 砸到的瞬間：按鈕震動、粉碎消失，核心隱藏
+            tl.to("#login-btn", { duration: 0.1, scale: 1.5, opacity: 0, filter: "blur(10px)" }, 0.45);
+            tl.to(coreMaterial, { duration: 0.1, opacity: 0 }, 0.45);
+            tl.to(bloomPass, { duration: 0.2, strength: 5.0 }, 0.45); // 砸擊閃光
+            tl.to(bloomPass, { duration: 0.5, strength: 1.5 }, 0.65); // 閃光消退
+
+            // [Phase 2: 啟動隧道躍遷 (Warp Tunnel)]
+            // 線框隧道浮現，粒子速度暴增
+            tl.to(tunnelMat, { duration: 1, opacity: 0.2, ease: "power2.out" }, 0.5);
+            tl.to(simState, { duration: 2, warpSpeed: 5.0, ease: "power3.in" }, 0.5);
+            
+            // 更改色調，變成 SAO 的螢光綠/青色
+            tl.to(particlesMaterial.color, { duration: 1, r: 0, g: 1, b: 0.4 }, 0.5);
+            tl.to(tunnelMat.color, { duration: 1, r: 0, g: 1, b: 0.4 }, 0.5);
+
+            // [Phase 3: SAO 五重感官確認]
+            tl.call(() => {
+                document.getElementById('main-hud').style.display = 'none';
+                document.getElementById('sao-sequence').style.display = 'block';
+            }, null, 1.5);
+
+            // 依序點亮 5 個同心環，帶有強烈彈性動畫
+            const rings = [1, 2, 3, 4, 5];
+            rings.forEach((num, index) => {
+                tl.to(`#ring-${num}`, { 
+                    duration: 0.6, opacity: 1, scale: 1, 
+                    ease: "back.out(1.5)" 
+                }, 1.5 + (index * 0.3));
+                
+                // 同步顯示右側的感官 OK 列表
+                tl.to(`#sense-${num}`, { 
+                    duration: 0.1, color: "var(--sao-green)", textShadow: "0 0 10px var(--sao-green)" 
+                }, 1.6 + (index * 0.3));
+                tl.to(`#sense-${num} span`, { 
+                    duration: 0.1, color: "var(--sao-green)" 
+                }, 1.7 + (index * 0.3));
+            });
+
+            // [Phase 4: 最終登入 (FULL DIVE)]
+            // 全部環點亮後，環加速旋轉並放大消失
+            tl.to(".sao-ring", { duration: 1.5, scale: 3, opacity: 0, stagger: 0.1, ease: "power3.in" }, "+=0.5");
+            tl.to(".sao-list", { duration: 0.5, x: 100, opacity: 0, ease: "power2.in" }, "-=1.5");
+            
+            // 中間顯示 FULL DIVE
+            tl.to(".link-start-text", { duration: 0.5, opacity: 1, scale: 1.2, ease: "back.out(2)" }, "-=1.0");
+            
+            // 終極白畫面閃屏 (轉場)
+            tl.to("#white-flash", { duration: 1, opacity: 1, ease: "power2.in" }, "+=0.5");
+            tl.call(() => {
+                alert("FULL DIVE: SUCCESS. WELCOME TO AINCRAD.");
+                // location.href = "your-next-page.html";
+            });
         });
 
         window.addEventListener('resize', () => {
