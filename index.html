@@ -2,29 +2,41 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>照片純程式散景模糊特效</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>史詩城市 - 動態景深特效</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #222; display: flex; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
-        canvas { display: block; max-width: 90vw; max-height: 90vh; border: 2px solid #444; cursor: col-resize; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        body, html { 
+            margin: 0; padding: 0; overflow: hidden; height: 100%; 
+            background: #111; display: flex; align-items: center; justify-content: center; 
+            color: white; font-family: sans-serif; 
+        }
+        /* 讓畫布在手機和電腦上都能自適應，並保持比例 */
+        canvas { 
+            display: block; 
+            max-width: 100vw; 
+            max-height: 100vh; 
+            object-fit: contain;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            touch-action: none; /* 防止手機預設的滑動行為 */
+        }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;}
     </style>
 </head>
 <body>
-    <div id="loading">圖片載入中... (請確保使用伺服器開啟此 HTML)</div>
+    <div id="loading">讀取圖片中...<br><small>(若卡住，請確認圖片與HTML放在同一資料夾)</small></div>
     <canvas id="canvas"></canvas>
     <script>
         "use strict";
 
-        // --- 設定：在在此處替換您的圖片檔案路徑 ---
-        const IMAGE_SRC = '13983bcae05ad17b7e79682df8c5917a.jpg'; // <--- 替換成您的圖片路徑 (請放置在同一目錄)
+        // --- 1. 綁定你指定的圖片檔名 ---
+        const IMAGE_SRC = '13983bcae05ad17b7e79682df8c5917a.jpg';
 
         function loadImage(src) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
-                img.crossOrigin = "anonymous"; // 嘗試處理跨域問題 (本地伺服器通常不需要)
+                // img.crossOrigin = "anonymous"; // 已經註解掉，避免 GitHub 同源誤判
                 img.onload = () => resolve(img);
-                img.onerror = () => reject(new Error('圖片載入失敗，請檢查路徑或瀏覽器安全設定 (CORS)。'));
+                img.onerror = () => reject(new Error('圖片載入失敗'));
                 img.src = src;
             });
         }
@@ -34,6 +46,147 @@
             const gl = canvas.getContext('webgl2');
 
             if (!gl) {
+                document.getElementById('loading').innerText = "抱歉，您的裝置不支援 WebGL 2.0";
+                return;
+            }
+
+            try {
+                // 載入圖片
+                const img = await loadImage(IMAGE_SRC);
+                document.getElementById('loading').style.display = 'none';
+
+                // 設置畫布的「內部解析度」與圖片真實像素一致，保證清晰度
+                canvas.width = img.width;
+                canvas.height = img.height;
+                gl.viewport(0, 0, canvas.width, canvas.height);
+
+                // --- 2. 互動控制 (同時支援電腦滑鼠與手機觸控) ---
+                let interactionX = 0.5; // 預設模糊度在中間值
+                
+                function updateX(clientX) {
+                    const rect = canvas.getBoundingClientRect();
+                    // 計算滑動位置佔畫布寬度的比例 (0.0 到 1.0)
+                    interactionX = (clientX - rect.left) / rect.width;
+                    // 限制範圍，避免超出邊界出錯
+                    interactionX = Math.max(0, Math.min(1, interactionX));
+                }
+
+                // 電腦滑鼠事件
+                canvas.addEventListener('mousemove', (e) => updateX(e.clientX));
+                
+                // 手機觸控事件
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault(); // 防止畫面跟著滾動
+                    updateX(e.touches[0].clientX);
+                }, { passive: false });
+
+                // --- 3. 著色器源代碼 (GLSL ES 3.00) ---
+                const vsSource = `#version 300 es
+                    in vec4 aPosition;
+                    in vec2 aTexCoord;
+                    out vec2 vTexCoord;
+                    void main() {
+                        gl_Position = aPosition;
+                        vTexCoord = aTexCoord;
+                    }
+                `;
+
+                const fsSource = `#version 300 es
+                    precision highp float;
+                    out vec4 outColor;
+                    uniform sampler2D uTexture;
+                    uniform float uBlurRadius;
+                    in vec2 vTexCoord;
+
+                    void main() {
+                        // 散景模糊演算法 (Bokeh Blur)
+                        const int SAMPLES = 32;
+                        const float PI2 = 6.28318530718;
+                        
+                        vec3 accCol = vec3(0.0);
+                        float accWeight = 0.0;
+                        
+                        for (int i = 0; i < SAMPLES; i++) {
+                            float fI = float(i);
+                            float p = fI * PI2 / float(SAMPLES);
+                            float r = sqrt(fI / float(SAMPLES)) * uBlurRadius; 
+                            
+                            vec2 offset = vec2(cos(p), sin(p)) * r;
+                            
+                            vec3 col = texture(uTexture, vTexCoord + offset).rgb;
+                            accCol += col;
+                            accWeight += 1.0;
+                        }
+                        
+                        vec3 finalCol = accCol / accWeight;
+                        outColor = vec4(finalCol, 1.0);
+                    }
+                `;
+
+                // --- WebGL 輔助編譯程式 ---
+                function createProgram(gl, vsS, fsS) {
+                    const vs = gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(vs, vsS); gl.compileShader(vs);
+                    const fs = gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fs, fsS); gl.compileShader(fs);
+                    const program = gl.createProgram(); gl.attachShader(program, vs); gl.attachShader(program, fs); gl.linkProgram(program);
+                    return program;
+                }
+                const program = createProgram(gl, vsSource, fsSource);
+
+                // --- 設置屬性與緩衝區 (全螢幕四邊形) ---
+                const positionBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+                const aPosition = gl.getAttribLocation(program, 'aPosition');
+                gl.enableVertexAttribArray(aPosition);
+                gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+
+                const texCoordBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+                // 注意這裡的紋理座標，WebGL 的 Y 軸與圖片是相反的，所以要做倒轉
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 1, 0]), gl.STATIC_DRAW);
+                const aTexCoord = gl.getAttribLocation(program, 'aTexCoord');
+                gl.enableVertexAttribArray(aTexCoord);
+                gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+
+                // --- 將圖片轉換為 WebGL 紋理 ---
+                const texture = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+                // --- 渲染循環 ---
+                gl.useProgram(program);
+                const uTexture = gl.getUniformLocation(program, 'uTexture');
+                const uBlurRadius = gl.getUniformLocation(program, 'uBlurRadius');
+
+                function render() {
+                    // 將滑動位置映射為模糊半徑 (maxRadius 越大越模糊)
+                    float maxRadius = 0.02; 
+                    float blurRadius = interactionX * maxRadius;
+                    gl.uniform1f(uBlurRadius, blurRadius); 
+
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, texture);
+                    gl.uniform1i(uTexture, 0);
+
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                    requestAnimationFrame(render);
+                }
+                requestAnimationFrame(render);
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('loading').innerHTML = '<span style="color:#ff6b6b">載入失敗！</span><br><br>請確認：<br>1. 圖片檔名為 13983bcae05ad17b7e79682df8c5917a.jpg<br>2. 圖片已推送到 GitHub 且與 HTML 在同一資料夾';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
                 alert("抱歉，您的瀏覽器不支援 WebGL 2.0");
                 return;
             }
