@@ -128,7 +128,7 @@
                 const uBlurRadius = gl.getUniformLocation(program, 'uBlurRadius');
 
                 function render() {
-                    float blurRadius = interactionX * 0.02; 
+                    const blurRadius = interactionX * 0.02; 
                     gl.uniform1f(uBlurRadius, blurRadius); 
                     gl.activeTexture(gl.TEXTURE0);
                     gl.bindTexture(gl.TEXTURE_2D, texture);
