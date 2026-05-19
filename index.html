@@ -45,7 +45,7 @@
                 canvas.height = img.height;
                 gl.viewport(0, 0, canvas.width, canvas.height);
 
-                let interactionX = 0.5; 
+                let interactionX = 0.0; 
                 function updateX(clientX) {
                     const rect = canvas.getBoundingClientRect();
                     interactionX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
@@ -128,7 +128,7 @@
                 const uBlurRadius = gl.getUniformLocation(program, 'uBlurRadius');
 
                 function render() {
-                    const blurRadius = interactionX * 0.02; 
+                    const blurRadius = interactionX * 0.005; 
                     gl.uniform1f(uBlurRadius, blurRadius); 
                     gl.activeTexture(gl.TEXTURE0);
                     gl.bindTexture(gl.TEXTURE_2D, texture);
