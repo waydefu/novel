@@ -3,359 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAO Style - FUI Login Sequence (Ultimate Complex Version)</title>
+    <title>SAO / Cyberpunk - ULTIMATE FUI LOGIN OVERLOAD</title>
     <style>
-        /* ================= 全域與變數 ================= */
+        /* ================= 終極變數與重置 ================= */
         :root {
-            --primary: #e2b764;     /* 魔法金 */
-            --secondary: #d37324;   /* 能量橘 */
-            --cyan: #00e5ff;        /* 系統藍 */
-            --alert: #ff2a2a;       /* 警告紅 */
-            --bg-dark: #050508;
-            --glow-primary: 0 0 15px rgba(226, 183, 100, 0.6), 0 0 30px rgba(211, 115, 36, 0.4);
-            --glow-cyan: 0 0 15px rgba(0, 229, 255, 0.6);
+            --gold: #e2b764; --gold-dim: rgba(226, 183, 100, 0.3);
+            --orange: #d37324; --cyan: #00f3ff; --alert: #ff003c;
+            --bg: #030305;
+            --glow-gold: 0 0 15px rgba(226, 183, 100, 0.8), 0 0 30px rgba(211, 115, 36, 0.5);
+            --glow-cyan: 0 0 20px rgba(0, 243, 255, 0.8);
+            --glow-alert: 0 0 20px rgba(255, 0, 60, 0.8);
         }
-
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: var(--bg-dark);
-            color: var(--primary);
-            font-family: 'Consolas', 'Courier New', monospace;
-            overflow: hidden; user-select: none;
-        }
-
-        /* ================= 環境特效 (掃描線 & 透視網格) ================= */
-        .scanlines {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
-            background-size: 100% 4px; z-index: 99; pointer-events: none; opacity: 0.6;
-        }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: var(--bg); color: var(--gold); font-family: 'Consolas', 'Courier New', monospace; overflow: hidden; user-select: none; perspective: 1500px; }
         
-        .perspective-grid {
-            position: absolute; bottom: -50%; left: -50%; width: 200%; height: 200%;
-            background-image: 
-                linear-gradient(rgba(226, 183, 100, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(226, 183, 100, 0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            transform: rotateX(75deg) translateY(0);
-            transform-origin: center center;
-            opacity: 0; transition: opacity 2s; z-index: 0;
-            animation: moveGrid 10s linear infinite;
+        /* ================= 視覺濾鏡與環境 ================= */
+        .crt-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 999;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%; box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
         }
-        @keyframes moveGrid { 0% { transform: rotateX(75deg) translateY(0); } 100% { transform: rotateX(75deg) translateY(50px); } }
-        .perspective-grid.show { opacity: 1; }
+        .hud-wrapper {
+            width: 100%; height: 100%; position: absolute; transform-style: preserve-3d;
+            transition: transform 0.1s ease-out; /* 由 JS 觸發 3D 視差 */
+        }
 
         /* ================= 階段共用 ================= */
-        .screen-phase {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; z-index: 10;
-            transition: opacity 0.5s ease;
-        }
-        .screen-phase.active { opacity: 1; pointer-events: auto; }
+        .phase { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 10; }
+        .phase.active { opacity: 1; pointer-events: auto; }
 
-        /* ================= 階段 1：硬核終端機 ================= */
-        #phase-1 { flex-direction: column; align-items: flex-start; padding: 4vw; background: #000; }
-        .term-line { font-size: 13px; color: #888; margin-bottom: 4px; text-shadow: 0 0 2px rgba(255,255,255,0.2); }
-        .term-highlight { color: var(--primary); text-shadow: var(--glow-primary); }
-        .term-success { color: #0f0; font-weight: bold; margin-top: 20px; font-size: 18px; text-shadow: 0 0 10px #0f0; display: none; }
-        .loading-bar { display: inline-block; width: 200px; height: 10px; border: 1px solid #444; margin-left: 10px; position: relative; top: 1px; }
-        .loading-fill { height: 100%; background: var(--primary); width: 0%; box-shadow: var(--glow-primary); }
+        /* ================= PHASE 1: 四線程開機 ================= */
+        #phase-1 { background: #000; padding: 2vw; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; }
+        .boot-window { border: 1px solid var(--gold-dim); background: rgba(10,10,15,0.8); padding: 10px; font-size: 10px; overflow: hidden; position: relative; }
+        .boot-window::before { content: 'SYS_THREAD'; position: absolute; top: 0; right: 0; background: var(--gold); color: #000; padding: 2px 5px; font-weight: bold; }
+        .boot-line { margin: 2px 0; color: #0f0; text-shadow: 0 0 5px #0f0; }
+        .boot-hex { color: #888; }
+        #global-success { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3vw; font-weight: bold; color: var(--gold); text-shadow: var(--glow-gold); display: none; background: rgba(0,0,0,0.9); padding: 20px; border: 2px solid var(--gold); z-index: 100; text-align: center; }
 
-        /* ================= 階段 2：深空浮現 ================= */
-        .welcome-box { text-align: center; position: relative; }
-        .welcome-text {
-            font-size: 3rem; color: #fff; letter-spacing: 12px; font-weight: 100;
-            text-shadow: var(--glow-cyan), 0 0 50px var(--cyan);
-            animation: pulse-text 3s infinite alternate;
-        }
-        .welcome-sub {
-            font-size: 1rem; color: var(--cyan); letter-spacing: 8px; margin-top: 10px; opacity: 0.8;
-            border-top: 1px solid var(--cyan); border-bottom: 1px solid var(--cyan); padding: 5px 0; display: inline-block;
-        }
-        @keyframes pulse-text { 0% { opacity: 0.8; filter: blur(0px); } 100% { opacity: 1; filter: blur(1px); } }
+        /* ================= PHASE 2: UI 主體 ================= */
+        /* 頂部與底部遙測帶 */
+        .telemetry-bar { position: absolute; left: 0; width: 100%; height: 30px; background: rgba(10,10,15,0.9); border-top: 1px solid var(--gold-dim); border-bottom: 1px solid var(--gold-dim); display: flex; align-items: center; overflow: hidden; font-size: 10px; white-space: nowrap; z-index: 50; }
+        .telemetry-bar.top { top: 2%; }
+        .telemetry-bar.bottom { bottom: 2%; }
+        .ticker-text { animation: ticker 20s linear infinite; display: inline-block; padding-left: 100%; color: var(--cyan); }
+        @keyframes ticker { 100% { transform: translateX(-100%); } }
 
-        /* ================= 階段 3：超複雜 FUI 主介面 ================= */
-        .ui-wrapper { width: 95%; height: 95%; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 20; }
-
-        /* --- 裝飾性四角定位框 --- */
-        .corner-bracket { position: absolute; width: 50px; height: 50px; border: 2px solid var(--primary); opacity: 0.5; }
-        .cb-tl { top: 0; left: 0; border-right: none; border-bottom: none; }
-        .cb-tr { top: 0; right: 0; border-left: none; border-bottom: none; }
-        .cb-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
-        .cb-br { bottom: 0; right: 0; border-left: none; border-top: none; }
-
-        /* --- 側邊面板進階 --- */
-        .side-panel {
-            width: 320px; padding: 25px;
-            background: linear-gradient(135deg, rgba(20,20,25,0.8) 0%, rgba(10,10,15,0.9) 100%);
-            border: 1px solid rgba(226, 183, 100, 0.4);
-            border-top: 4px solid var(--primary);
-            backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.8), var(--glow-primary);
-            opacity: 0; transform: translateX(-100px) skewX(-5deg);
-            transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative; overflow: hidden;
-        }
-        .side-panel::before { content:''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); animation: scan-panel 4s infinite; }
-        @keyframes scan-panel { 100% { left: 200%; } }
-
-        .side-panel.right { transform: translateX(100px) skewX(5deg); }
-        .side-panel.show { opacity: 1; transform: translateX(0) skewX(0); }
-
-        .panel-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--primary); padding-bottom: 8px; margin-bottom: 20px; }
-        .panel-title { font-size: 16px; font-weight: bold; letter-spacing: 3px; }
-        .panel-hex { font-size: 10px; color: var(--cyan); opacity: 0.8; }
-
-        .data-block { margin-bottom: 15px; }
-        .data-label { font-size: 10px; color: #999; margin-bottom: 4px; display: block; letter-spacing: 1px; }
-        .data-value { font-size: 14px; font-weight: bold; color: #fff; letter-spacing: 1px; display: flex; justify-content: space-between; }
-        .val-hl { color: var(--cyan); text-shadow: var(--glow-cyan); }
-        .val-warn { color: var(--alert); text-shadow: 0 0 10px var(--alert); }
-
-        /* 動態長條圖 */
-        .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 40px; margin-top: 10px; border-bottom: 1px solid #444; padding-bottom: 2px; }
-        .chart-bar { flex: 1; background: var(--secondary); opacity: 0.7; transition: height 0.2s; box-shadow: 0 0 5px var(--secondary); }
-
-        /* --- 終極複雜中央魔法陣 --- */
-        .center-core {
-            position: relative; width: 650px; height: 650px;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            transform: scale(0.5) rotate(45deg); opacity: 0;
-            transition: all 1.5s cubic-bezier(0.1, 0.9, 0.2, 1);
-        }
-        .center-core.show { transform: scale(1) rotate(0deg); opacity: 1; }
-
-        .layer { position: absolute; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        /* HUD 面板排版 */
+        .hud-grid { width: 96%; height: 86%; margin: 4% auto; display: flex; justify-content: space-between; align-items: center; position: relative; }
+        .side-group { display: flex; gap: 15px; height: 100%; align-items: center; perspective: 1000px; }
         
-        /* 第1層：最外圍刻度圈 */
-        .ring-outer { width: 600px; height: 600px; border: 2px dashed rgba(226, 183, 100, 0.3); animation: spin 60s linear infinite; }
-        /* 第2層：六角形幾何 (透過 clip-path 切割) */
-        .ring-hex { width: 540px; height: 540px; border: 2px solid rgba(211, 115, 36, 0.6); clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); animation: spin 40s linear infinite reverse; box-shadow: var(--glow-primary); }
-        /* 第3層：粗實線能量環 */
-        .ring-thick { width: 480px; height: 480px; border: 8px solid rgba(226, 183, 100, 0.15); border-left-color: var(--primary); border-right-color: var(--primary); animation: spin 20s ease-in-out infinite alternate; }
-        /* 第4層：點狀資料環 */
-        .ring-dotted { width: 420px; height: 420px; border: 4px dotted var(--secondary); animation: spin 30s linear infinite; opacity: 0.8; }
-        /* 第5層：雷達掃描光束 */
-        .ring-radar { width: 380px; height: 380px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 70%, rgba(226, 183, 100, 0.4) 100%); animation: spin 5s linear infinite; mask-image: radial-gradient(transparent 65%, black 66%); -webkit-mask-image: radial-gradient(transparent 65%, black 66%); }
-        /* 第6層：細節內環與十字準星 */
-        .ring-inner { width: 300px; height: 300px; border: 1px solid var(--primary); box-shadow: inset 0 0 30px rgba(226, 183, 100, 0.2); animation: spin 15s linear infinite reverse; }
-        .crosshair { position: absolute; width: 100%; height: 100%; }
-        .crosshair::before { content:''; position:absolute; top:50%; left:0; width:100%; height:1px; background:rgba(226,183,100,0.3); }
-        .crosshair::after { content:''; position:absolute; top:0; left:50%; width:1px; height:100%; background:rgba(226,183,100,0.3); }
-
-        @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-
-        /* --- 登入互動模組 --- */
-        .login-module { z-index: 50; text-align: center; background: rgba(5,5,8,0.7); padding: 30px 40px; border: 1px solid var(--primary); border-radius: 8px; backdrop-filter: blur(5px); box-shadow: 0 0 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(226, 183, 100, 0.1); }
-        .brand-logo { font-size: 26px; letter-spacing: 8px; margin-bottom: 25px; font-weight: bold; text-shadow: var(--glow-primary); }
-        
-        .btn-group { display: flex; flex-direction: column; gap: 15px; }
-        .btn-cyber {
-            background: transparent; border: 1px solid var(--secondary); color: var(--primary);
-            padding: 15px 30px; font-size: 14px; font-weight: bold; letter-spacing: 3px; font-family: 'Consolas', monospace;
-            cursor: pointer; position: relative; overflow: hidden; transition: 0.3s;
-            text-transform: uppercase;
+        .panel {
+            background: linear-gradient(135deg, rgba(15,15,20,0.8), rgba(5,5,10,0.95)); border: 1px solid var(--gold-dim); border-top: 3px solid var(--gold); box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 15px var(--gold-dim);
+            padding: 15px; display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden;
+            opacity: 0; transition: all 0.8s cubic-bezier(0.1, 1, 0.1, 1);
         }
-        .btn-cyber::before { content: '[ '; color: var(--secondary); transition: 0.3s; margin-right: 5px; opacity: 0; }
-        .btn-cyber::after { content: ' ]'; color: var(--secondary); transition: 0.3s; margin-left: 5px; opacity: 0; }
-        .btn-cyber:hover { background: rgba(211, 115, 36, 0.2); box-shadow: var(--glow-primary); color: #fff; border-color: var(--primary); }
-        .btn-cyber:hover::before, .btn-cyber:hover::after { opacity: 1; margin: 0 10px; color: #fff; }
+        .panel::after { content:''; position: absolute; width: 200%; height: 50px; background: linear-gradient(transparent, rgba(226,183,100,0.1), transparent); top: -50px; left: -50%; transform: rotate(45deg); animation: scanlight 3s infinite; pointer-events: none; }
+        @keyframes scanlight { 100% { top: 150%; } }
+
+        /* 面板展開特效 */
+        .hud-grid.show .panel { opacity: 1; transform: translateZ(0) rotateY(0) !important; }
+        .hud-grid:not(.show) .panel.left-out { transform: translateZ(-200px) translateX(-200px) rotateY(30deg); }
+        .hud-grid:not(.show) .panel.left-in { transform: translateZ(-100px) translateX(-100px) rotateY(15deg); }
+        .hud-grid:not(.show) .panel.right-in { transform: translateZ(-100px) translateX(100px) rotateY(-15deg); }
+        .hud-grid:not(.show) .panel.right-out { transform: translateZ(-200px) translateX(200px) rotateY(-30deg); }
+
+        .panel.wide { width: 280px; height: 90%; }
+        .panel.narrow { width: 180px; height: 75%; border-top-color: var(--cyan); }
+
+        /* 內部數據模組 */
+        .module-title { font-size: 11px; color: #fff; letter-spacing: 2px; border-bottom: 1px dashed var(--gold); padding-bottom: 4px; display: flex; justify-content: space-between; }
+        .module-title span:last-child { color: var(--cyan); }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 10px; }
+        .data-cell { background: rgba(255,255,255,0.03); padding: 4px; border-left: 2px solid var(--gold-dim); }
+        .data-val { color: #fff; font-weight: bold; margin-top: 2px; font-size: 12px; }
         
-        .sys-msg { font-size: 10px; color: #777; margin-top: 15px; letter-spacing: 2px; }
+        /* 頻譜圖與波形圖 */
+        .spectrum { display: flex; align-items: flex-end; gap: 2px; height: 40px; margin-top: 5px; }
+        .spec-bar { flex: 1; background: var(--cyan); opacity: 0.8; transition: height 0.1s; }
+        .hex-stream { font-size: 8px; color: #666; word-wrap: break-word; line-height: 1.2; height: 60px; overflow: hidden; font-family: monospace; }
+        
+        /* 標靶與生物雷達 */
+        .bio-radar { width: 100%; aspect-ratio: 1; border: 1px solid var(--cyan); border-radius: 50%; position: relative; margin-top: 10px; background: repeating-radial-gradient(transparent, transparent 10%, rgba(0,243,255,0.1) 10%, rgba(0,243,255,0.1) 11%); }
+        .bio-radar::before { content:''; position: absolute; width: 50%; height: 2px; background: var(--cyan); top: 50%; left: 50%; transform-origin: left center; animation: spin 2s linear infinite; box-shadow: var(--glow-cyan); }
+
+        /* ================= 中央 15 層終極反應爐 ================= */
+        .center-reactor { position: relative; width: 700px; height: 700px; display: flex; justify-content: center; align-items: center; transform-style: preserve-3d; opacity: 0; transition: opacity 1s, transform 1.5s cubic-bezier(0.1,1,0.1,1); transform: scale(0.3) rotateZ(-45deg); }
+        .hud-grid.show .center-reactor { opacity: 1; transform: scale(1) rotateZ(0); }
+
+        .ring { position: absolute; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); transform-style: preserve-3d; }
+        
+        /* 基礎環 */
+        .r-outer { width: 680px; height: 680px; border: 1px dashed #555; animation: spin 60s linear infinite; }
+        .r-hex { width: 620px; height: 620px; border: 2px solid var(--gold-dim); clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); animation: spin 45s linear infinite reverse; box-shadow: inset 0 0 20px var(--gold-dim); }
+        .r-thick { width: 560px; height: 560px; border: 15px solid rgba(211, 115, 36, 0.1); border-left: 15px solid var(--orange); border-right: 15px solid var(--gold); animation: spin 20s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .r-dash { width: 500px; height: 500px; border: 3px dashed var(--cyan); animation: spin 30s linear infinite; opacity: 0.6; }
+        
+        /* 高階軌道環 (3D X/Y 軸旋轉) */
+        .orbit-x { width: 750px; height: 750px; border: 2px solid rgba(0, 243, 255, 0.3); border-top: 2px solid var(--cyan); animation: orbitX 8s linear infinite; box-shadow: var(--glow-cyan); }
+        .orbit-y { width: 720px; height: 720px; border: 2px solid rgba(226, 183, 100, 0.3); border-left: 2px solid var(--gold); animation: orbitY 12s linear infinite; }
+        
+        /* 雷達與刻度 */
+        .r-radar { width: 440px; height: 440px; background: conic-gradient(from 0deg, transparent 60%, rgba(226, 183, 100, 0.5) 100%); animation: spin 4s linear infinite; border-radius: 50%; mask-image: radial-gradient(transparent 68%, black 69%); -webkit-mask-image: radial-gradient(transparent 68%, black 69%); }
+        .r-ticks { width: 400px; height: 400px; background: repeating-conic-gradient(var(--gold) 0 1deg, transparent 1deg 6deg); -webkit-mask-image: radial-gradient(transparent 90%, black 91%); animation: spin 60s linear infinite reverse; }
+        
+        /* 內層核心 */
+        .r-core-out { width: 320px; height: 320px; border: 4px double var(--gold); box-shadow: var(--glow-gold); animation: spin 10s linear infinite; }
+        .r-core-in { width: 280px; height: 280px; border: 1px solid var(--cyan); box-shadow: inset 0 0 50px rgba(0,243,255,0.2); }
+
+        @keyframes spin { 100% { transform: translate(-50%, -50%) rotateZ(360deg); } }
+        @keyframes orbitX { 0% { transform: translate(-50%, -50%) rotateX(75deg) rotateZ(0deg); } 100% { transform: translate(-50%, -50%) rotateX(75deg) rotateZ(360deg); } }
+        @keyframes orbitY { 0% { transform: translate(-50%, -50%) rotateY(70deg) rotateZ(0deg); } 100% { transform: translate(-50%, -50%) rotateY(70deg) rotateZ(-360deg); } }
+
+        /* ================= 登入互動模組 (Glitch 特效) ================= */
+        .login-box { z-index: 100; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 300px; background: rgba(5,5,10,0.6); padding: 30px 20px; border: 1px solid var(--cyan); backdrop-filter: blur(10px); clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%); }
+        
+        .glitch-text { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: 5px; position: relative; margin-bottom: 30px; text-shadow: var(--glow-cyan); }
+        .glitch-text::before, .glitch-text::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.8; }
+        .glitch-text::before { left: 2px; text-shadow: -2px 0 red; clip-path: inset(20% 0 80% 0); animation: glitch-anim 2s infinite linear alternate-reverse; }
+        .glitch-text::after { left: -2px; text-shadow: -2px 0 blue; clip-path: inset(80% 0 20% 0); animation: glitch-anim 3s infinite linear alternate-reverse; }
+        @keyframes glitch-anim {
+            0% { clip-path: inset(10% 0 60% 0); } 20% { clip-path: inset(30% 0 10% 0); } 40% { clip-path: inset(70% 0 20% 0); } 60% { clip-path: inset(5% 0 80% 0); } 80% { clip-path: inset(50% 0 30% 0); } 100% { clip-path: inset(90% 0 5% 0); }
+        }
+
+        .btn { display: block; width: 100%; padding: 12px; margin-bottom: 10px; background: transparent; border: 1px solid var(--gold); color: var(--gold); font-family: 'Consolas', monospace; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; text-transform: uppercase; }
+        .btn:hover { background: var(--gold); color: #000; box-shadow: var(--glow-gold); }
+        .btn::before { content:''; position: absolute; top:0; left:-100%; width:100%; height:100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transition: 0.4s; }
+        .btn:hover::before { left: 100%; }
+        
+        .alert-text { font-size: 10px; color: var(--alert); text-shadow: var(--glow-alert); margin-top: 15px; animation: blink 1s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
     </style>
 </head>
 <body>
 
-    <div class="scanlines"></div>
-    <div class="perspective-grid" id="grid-bg"></div>
+    <div class="crt-overlay"></div>
 
-    <div id="phase-1" class="screen-phase active">
-        <div id="term-content"></div>
-        <div id="term-success" class="term-success">>> SECURE CONNECTION ESTABLISHED. READY FOR DIVE.</div>
+    <div id="phase-1" class="phase active">
+        <div class="boot-window" id="term-1"></div>
+        <div class="boot-window" id="term-2"></div>
+        <div class="boot-window" id="term-3"></div>
+        <div class="boot-window" id="term-4"></div>
+        <div id="global-success">>> NEURAL LINK ESTABLISHED << <br> <span style="font-size:2vw; color:#0f0;">OVERRIDE COMPLETE</span></div>
     </div>
 
-    <div id="phase-2" class="screen-phase">
-        <div class="welcome-box">
-            <div class="welcome-text">SWORD ART ONLINE</div>
-            <div class="welcome-sub">SYSTEM PROTOTYPE v4.0.2</div>
-        </div>
-    </div>
-
-    <div id="phase-3" class="screen-phase">
-        
-        <div class="corner-bracket cb-tl"></div><div class="corner-bracket cb-tr"></div>
-        <div class="corner-bracket cb-bl"></div><div class="corner-bracket cb-br"></div>
-
-        <div class="ui-wrapper">
+    <div id="phase-2" class="phase">
+        <div class="hud-wrapper" id="hud-3d">
             
-            <div class="side-panel" id="panel-left">
-                <div class="panel-header">
-                    <span class="panel-title">SYS_CORE_MONITOR</span>
-                    <span class="panel-hex" id="rand-hex-1">0x00FA89</span>
-                </div>
+            <div class="telemetry-bar top"><div class="ticker-text" id="ticker-top"></div></div>
+            
+            <div class="hud-grid" id="main-hud">
                 
-                <div class="data-block">
-                    <span class="data-label">NEURAL SYNC RATE</span>
-                    <span class="data-value"><span class="val-hl" id="sync-rate">0.00%</span> <span>[ACTIVE]</span></span>
-                </div>
-                
-                <div class="data-block">
-                    <span class="data-label">MEMORY ALLOCATION</span>
-                    <span class="data-value"><span>VRAM: 24GB</span> <span class="val-warn">89%</span></span>
-                </div>
-
-                <div class="data-block">
-                    <span class="data-label">REAL-TIME DATA FLOW</span>
-                    <div class="chart-container" id="chart-left">
-                        </div>
-                </div>
-
-                <div class="data-block" style="margin-top:20px;">
-                    <span class="data-label">SERVER LATENCY</span>
-                    <span class="data-value"><span class="val-hl">12 ms</span> <span>TOKYO_01</span></span>
-                </div>
-            </div>
-
-            <div class="center-core" id="core-ui">
-                <div class="layer ring-outer"></div>
-                <div class="layer ring-hex"></div>
-                <div class="layer ring-thick"></div>
-                <div class="layer ring-dotted"></div>
-                <div class="layer ring-radar"></div>
-                <div class="layer ring-inner"><div class="crosshair"></div></div>
-                
-                <div class="login-module">
-                    <div class="brand-logo">A I N C R A D</div>
-                    <div class="btn-group">
-                        <button class="btn-cyber">Authenticate via Google</button>
-                        <button class="btn-cyber">Guest Protocol Dive</button>
+                <div class="side-group">
+                    <div class="panel narrow left-out">
+                        <div class="module-title"><span>HEX_DUMP</span><span>0xFA</span></div>
+                        <div class="hex-stream" id="hex-stream-1"></div>
+                        <div class="module-title" style="margin-top:10px;"><span>BIO_SCAN</span><span>ACT</span></div>
+                        <div class="bio-radar"></div>
                     </div>
-                    <div class="sys-msg">BIOMETRIC SCAN STANDBY...</div>
-                </div>
-            </div>
-
-            <div class="side-panel right" id="panel-right">
-                <div class="panel-header">
-                    <span class="panel-title">ENVIRONMENT_ENV</span>
-                    <span class="panel-hex" id="rand-hex-2">0x00B4C1</span>
-                </div>
-
-                <div class="data-block">
-                    <span class="data-label">LOCATION COORDINATES</span>
-                    <span class="data-value"><span>LAT 25.17°</span> <span>LON 121.43°</span></span>
-                    <span class="data-value" style="font-size:10px; color:#888; margin-top:2px;">TAMSUI_DISTRICT, TW</span>
-                </div>
-
-                <div class="data-block">
-                    <span class="data-label">THREAT LEVEL</span>
-                    <span class="data-value"><span style="color:#0f0;">SAFE (CLASS D)</span></span>
-                </div>
-
-                <div class="data-block">
-                    <span class="data-label">PACKET TRANSMISSION</span>
-                    <div class="chart-container" id="chart-right">
+                    <div class="panel wide left-in">
+                        <div class="module-title"><span>SYS_TELEMETRY</span><span>V4.2</span></div>
+                        <div class="data-grid">
+                            <div class="data-cell">MEM_ALLOC<div class="data-val" id="d-mem">14.2 GB</div></div>
+                            <div class="data-cell">CORE_TEMP<div class="data-val" id="d-temp">42.5 °C</div></div>
+                            <div class="data-cell">SYNC_RATE<div class="data-val" style="color:var(--cyan)">98.4%</div></div>
+                            <div class="data-cell">LATENCY<div class="data-val">8 ms</div></div>
                         </div>
+                        <div class="module-title" style="margin-top:10px;"><span>WAVE_FREQ_A</span><span>hz</span></div>
+                        <div class="spectrum" id="spec-1"></div>
+                        <div class="module-title" style="margin-top:10px;"><span>WAVE_FREQ_B</span><span>hz</span></div>
+                        <div class="spectrum" id="spec-2"></div>
+                    </div>
                 </div>
 
-                <div class="data-block" style="margin-top:20px;">
-                    <span class="data-label">SESSION ID</span>
-                    <span class="data-value" style="font-size:12px; color:#aaa;" id="session-id">AX-9932-B</span>
+                <div class="center-reactor">
+                    <div class="ring orbit-x"></div>
+                    <div class="ring orbit-y"></div>
+                    <div class="ring r-outer"></div>
+                    <div class="ring r-hex"></div>
+                    <div class="ring r-thick"></div>
+                    <div class="ring r-dash"></div>
+                    <div class="ring r-radar"></div>
+                    <div class="ring r-ticks"></div>
+                    <div class="ring r-core-out"></div>
+                    <div class="ring r-core-in"></div>
+                    
+                    <div class="login-box">
+                        <div class="glitch-text" data-text="A I N C R A D">A I N C R A D</div>
+                        <button class="btn">Neural Authenticate</button>
+                        <button class="btn" style="border-color:var(--cyan); color:var(--cyan);">Guest Protocol</button>
+                        <div class="alert-text">[ WARNING: DIVE AT YOUR OWN RISK ]</div>
+                    </div>
                 </div>
+
+                <div class="side-group">
+                    <div class="panel wide right-in">
+                        <div class="module-title"><span>NET_TRAFFIC</span><span>SECURE</span></div>
+                        <div class="spectrum" id="spec-3"></div>
+                        <div class="module-title" style="margin-top:15px;"><span>TARGET_VECTORS</span><span>LOCK</span></div>
+                        <div class="data-grid">
+                            <div class="data-cell">ALPHA_X<div class="data-val" id="d-ax">145.22</div></div>
+                            <div class="data-cell">ALPHA_Y<div class="data-val" id="d-ay">-88.04</div></div>
+                            <div class="data-cell">THETA_Z<div class="data-val" id="d-tz">0.009</div></div>
+                            <div class="data-cell">OMEGA<div class="data-val alert-text" style="animation:none">CRITICAL</div></div>
+                        </div>
+                    </div>
+                    <div class="panel narrow right-out">
+                        <div class="module-title"><span>NODE_MAP</span><span>GLOBAL</span></div>
+                        <div class="bio-radar" style="border-radius: 0; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: rgba(226,183,100,0.1);"></div>
+                        <div class="module-title" style="margin-top:10px;"><span>MEM_DUMP</span><span>0x00</span></div>
+                        <div class="hex-stream" id="hex-stream-2" style="color:var(--gold-dim)"></div>
+                    </div>
+                </div>
+
             </div>
-
+            
+            <div class="telemetry-bar bottom"><div class="ticker-text" id="ticker-bottom" style="color:var(--gold);"></div></div>
         </div>
     </div>
 
     <script>
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        // 建立假長條圖
-        function createCharts(elementId, count) {
-            const container = document.getElementById(elementId);
+        /* --- 視覺數據生成器 --- */
+        // 產生長條圖
+        function buildSpectrum(id, count) {
+            const el = document.getElementById(id);
             for(let i=0; i<count; i++) {
                 let bar = document.createElement('div');
-                bar.className = 'chart-bar';
-                bar.style.height = Math.random() * 100 + '%';
-                container.appendChild(bar);
+                bar.className = 'spec-bar';
+                el.appendChild(bar);
             }
         }
-        createCharts('chart-left', 20);
-        createCharts('chart-right', 20);
+        buildSpectrum('spec-1', 25); buildSpectrum('spec-2', 25); buildSpectrum('spec-3', 35);
 
-        // 動態更新資料 (讓 UI 活起來)
+        // 隨機十六進位字串產生器
+        function randHex(length) {
+            let res = '';
+            for(let i=0; i<length; i++) res += Math.floor(Math.random()*16).toString(16).toUpperCase() + ' ';
+            return res;
+        }
+
+        // 高頻率全域數據更新 (每 0.1 秒刷新一次，製造資訊過載感)
         setInterval(() => {
-            // 更新長條圖高度
-            document.querySelectorAll('.chart-bar').forEach(bar => {
-                if(Math.random() > 0.5) bar.style.height = (Math.random() * 80 + 20) + '%';
+            // 頻譜圖跳動
+            document.querySelectorAll('.spec-bar').forEach(b => {
+                b.style.height = (Math.random() * 90 + 10) + '%';
+                if(Math.random()>0.8) b.style.background = 'var(--gold)';
+                else b.style.background = 'var(--cyan)';
             });
-            // 更新十六進位碼
-            document.getElementById('rand-hex-1').innerText = '0x' + Math.floor(Math.random()*16777215).toString(16).toUpperCase().padStart(6, '0');
-            document.getElementById('rand-hex-2').innerText = '0x' + Math.floor(Math.random()*16777215).toString(16).toUpperCase().padStart(6, '0');
-            // 更新同步率
-            let sync = parseFloat(document.getElementById('sync-rate').innerText);
-            if(sync < 99.8) document.getElementById('sync-rate').innerText = (sync + (Math.random() * 2)).toFixed(2) + '%';
-        }, 300);
+            // Hex 瀑布流
+            document.getElementById('hex-stream-1').innerText = randHex(150);
+            document.getElementById('hex-stream-2').innerText = randHex(150);
+            // 數字跳動
+            document.getElementById('d-mem').innerText = (Math.random()*10 + 10).toFixed(2) + ' GB';
+            document.getElementById('d-temp').innerText = (Math.random()*20 + 30).toFixed(1) + ' °C';
+            document.getElementById('d-ax').innerText = (Math.random()*300 - 150).toFixed(2);
+            document.getElementById('d-ay').innerText = (Math.random()*300 - 150).toFixed(2);
+        }, 100);
 
-        // 終端機動畫
-        async function runBootSequence() {
-            const term = document.getElementById('term-content');
-            const logs = [
-                { t: "Initiating FullDive environment...", d: 200 },
-                { t: "Loading NerveGear BIOS v2.04... <span class='term-highlight'>[OK]</span>", d: 150 },
-                { t: "Checking cardinal system connectivity... <span class='term-highlight'>[OK]</span>", d: 300 },
-                { t: "Bypassing local security protocols... <span style='color:yellow'>[WARNING: Overridden]</span>", d: 400 },
-                { t: "Compiling environmental geometry...", d: 100, bar: true },
-                { t: "Synchronizing sensory inputs: Sight, Hearing, Touch...", d: 500 }
-            ];
+        // 跑馬燈初始化
+        document.getElementById('ticker-top').innerText = "SYS_OVERRIDE_INIT // " + randHex(50) + " // KERNEL_PANIC_BYPASS // " + randHex(50);
+        document.getElementById('ticker-bottom').innerText = "CONNECTION SECURE // IPV6_ENC: ACTIVE // LATITUDE: 25.17 LONGITUDE: 121.43 // PROTOCOL: SWORD_ART_ONLINE // " + randHex(50);
 
-            for (let log of logs) {
-                let line = document.createElement('div');
-                line.className = 'term-line';
-                line.innerHTML = '> ' + log.t;
-                term.appendChild(line);
-                
-                if (log.bar) {
-                    let pBar = document.createElement('div'); pBar.className = 'loading-bar';
-                    let pFill = document.createElement('div'); pFill.className = 'loading-fill';
-                    pBar.appendChild(pFill);
-                    line.appendChild(pBar);
-                    // 跑進度條動畫
-                    for(let i=1; i<=10; i++) {
-                        pFill.style.width = (i*10) + '%';
-                        await sleep(50);
-                    }
-                }
-                await sleep(log.d);
+        /* --- 3D 視差傾斜特效 --- */
+        document.addEventListener('mousemove', (e) => {
+            if(!document.getElementById('phase-2').classList.contains('active')) return;
+            const x = (window.innerWidth / 2 - e.pageX) / 40; // 調整靈敏度
+            const y = (window.innerHeight / 2 - e.pageY) / 40;
+            document.getElementById('hud-3d').style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+        });
+
+        /* --- 開機程序列印 --- */
+        async function runBootTerm(id, prefix, lines, delay) {
+            const el = document.getElementById(id);
+            for(let i=0; i<lines; i++) {
+                let div = document.createElement('div');
+                div.className = 'boot-line';
+                div.innerHTML = `[${prefix}] ${randHex(4)} <span class="boot-hex">${randHex(8)}</span> LOAD_OK`;
+                el.appendChild(div);
+                el.scrollTop = el.scrollHeight;
+                await sleep(delay + Math.random()*50);
             }
-            
-            document.getElementById('term-success').style.display = 'block';
-            await sleep(1200);
-
-            // 進入階段 2 (深空)
-            document.getElementById('phase-1').classList.remove('active');
-            document.getElementById('phase-2').classList.add('active');
-            await sleep(2500);
-
-            // 進入階段 3 (主介面)
-            document.getElementById('phase-2').classList.remove('active');
-            document.getElementById('phase-3').classList.add('active');
-            
-            // 開啟透視網格背景
-            document.getElementById('grid-bg').classList.add('show');
-            await sleep(300);
-            
-            // 華麗展開動畫
-            document.getElementById('core-ui').classList.add('show');
-            await sleep(800);
-            document.getElementById('panel-left').classList.add('show');
-            document.getElementById('panel-right').classList.add('show');
-            
-            // 快速拉滿同步率
-            document.getElementById('sync-rate').innerText = "99.89%";
         }
 
-        window.onload = runBootSequence;
+        /* --- 主控流程 --- */
+        async function initSequence() {
+            // 四個終端機同時並發寫入
+            Promise.all([
+                runBootTerm('term-1', 'SYS', 40, 30),
+                runBootTerm('term-2', 'NET', 30, 40),
+                runBootTerm('term-3', 'MEM', 50, 20),
+                runBootTerm('term-4', 'BIO', 35, 35)
+            ]).then(async () => {
+                // 開機完成，閃爍成功字樣
+                document.getElementById('global-success').style.display = 'block';
+                await sleep(1500);
+                
+                // 切換 Phase
+                document.getElementById('phase-1').classList.remove('active');
+                document.getElementById('phase-2').classList.add('active');
+                
+                await sleep(500);
+                // 觸發主 HUD 變形展開
+                document.getElementById('main-hud').classList.add('show');
+            });
+        }
+
+        window.onload = initSequence;
     </script>
 </body>
 </html>
