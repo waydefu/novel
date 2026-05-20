@@ -3,234 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAO Style - FUI Login Sequence (Dark Mode)</title>
+    <title>SAO Style - FUI Login Sequence (Ultimate Complex Version)</title>
     <style>
-        /* ================= 基礎設定 ================= */
+        /* ================= 全域與變數 ================= */
         :root {
-            --theme-gold: #e2b764;
-            --theme-orange: #d37324;
-            --theme-cyan: #00e5ff;
-            --theme-bg: #000000;
-            --neon-glow: 0 0 10px rgba(226, 183, 100, 0.5), 0 0 20px rgba(211, 115, 36, 0.3);
-            --neon-cyan: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
+            --primary: #e2b764;     /* 魔法金 */
+            --secondary: #d37324;   /* 能量橘 */
+            --cyan: #00e5ff;        /* 系統藍 */
+            --alert: #ff2a2a;       /* 警告紅 */
+            --bg-dark: #050508;
+            --glow-primary: 0 0 15px rgba(226, 183, 100, 0.6), 0 0 30px rgba(211, 115, 36, 0.4);
+            --glow-cyan: 0 0 15px rgba(0, 229, 255, 0.6);
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: var(--theme-bg);
-            color: var(--theme-gold);
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: var(--bg-dark);
+            color: var(--primary);
+            font-family: 'Consolas', 'Courier New', monospace;
+            overflow: hidden; user-select: none;
         }
 
-        /* 全域動態背景 */
-        #dynamic-bg {
+        /* ================= 環境特效 (掃描線 & 透視網格) ================= */
+        .scanlines {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000000; /* 初始全黑 */
-            z-index: 0;
-            transition: background 2s ease;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px; z-index: 99; pointer-events: none; opacity: 0.6;
         }
-        #dynamic-bg.space-mode {
-            background: radial-gradient(circle at center, #0d111a 0%, #000000 100%);
+        
+        .perspective-grid {
+            position: absolute; bottom: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(226, 183, 100, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(226, 183, 100, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(75deg) translateY(0);
+            transform-origin: center center;
+            opacity: 0; transition: opacity 2s; z-index: 0;
+            animation: moveGrid 10s linear infinite;
         }
+        @keyframes moveGrid { 0% { transform: rotateX(75deg) translateY(0); } 100% { transform: rotateX(75deg) translateY(50px); } }
+        .perspective-grid.show { opacity: 1; }
 
-        /* 階段共用設定 */
+        /* ================= 階段共用 ================= */
         .screen-phase {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; z-index: 1;
-            transition: opacity 0.8s ease;
+            opacity: 0; pointer-events: none; z-index: 10;
+            transition: opacity 0.5s ease;
         }
         .screen-phase.active { opacity: 1; pointer-events: auto; }
 
-        /* ================= 階段 1：終端機連線 ================= */
-        #phase-1 { flex-direction: column; align-items: flex-start; padding: 40px; box-sizing: border-box; }
-        .terminal-text { font-size: 14px; margin-bottom: 8px; color: #aaa; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
-        .terminal-success { color: #0f0; text-shadow: 0 0 10px #0f0; font-weight: bold; margin-top: 20px; display: none; }
+        /* ================= 階段 1：硬核終端機 ================= */
+        #phase-1 { flex-direction: column; align-items: flex-start; padding: 4vw; background: #000; }
+        .term-line { font-size: 13px; color: #888; margin-bottom: 4px; text-shadow: 0 0 2px rgba(255,255,255,0.2); }
+        .term-highlight { color: var(--primary); text-shadow: var(--glow-primary); }
+        .term-success { color: #0f0; font-weight: bold; margin-top: 20px; font-size: 18px; text-shadow: 0 0 10px #0f0; display: none; }
+        .loading-bar { display: inline-block; width: 200px; height: 10px; border: 1px solid #444; margin-left: 10px; position: relative; top: 1px; }
+        .loading-fill { height: 100%; background: var(--primary); width: 0%; box-shadow: var(--glow-primary); }
 
-        /* ================= 階段 2：深空歡迎儀式 ================= */
-        #phase-2 { flex-direction: column; }
+        /* ================= 階段 2：深空浮現 ================= */
+        .welcome-box { text-align: center; position: relative; }
         .welcome-text {
-            font-size: 2.2rem; color: #fff; letter-spacing: 6px; font-family: sans-serif; font-weight: 300;
-            text-shadow: var(--neon-cyan);
-            transform: translateY(10px); animation: floatText 4s ease-in-out infinite;
+            font-size: 3rem; color: #fff; letter-spacing: 12px; font-weight: 100;
+            text-shadow: var(--glow-cyan), 0 0 50px var(--cyan);
+            animation: pulse-text 3s infinite alternate;
         }
-        .system-voice {
-            font-size: 0.8rem; color: var(--theme-cyan); letter-spacing: 4px; margin-top: 15px;
-            opacity: 0.7; font-family: 'Courier New', Courier, monospace;
+        .welcome-sub {
+            font-size: 1rem; color: var(--cyan); letter-spacing: 8px; margin-top: 10px; opacity: 0.8;
+            border-top: 1px solid var(--cyan); border-bottom: 1px solid var(--cyan); padding: 5px 0; display: inline-block;
         }
+        @keyframes pulse-text { 0% { opacity: 0.8; filter: blur(0px); } 100% { opacity: 1; filter: blur(1px); } }
 
-        @keyframes floatText {
-            0%, 100% { transform: translateY(10px); }
-            50% { transform: translateY(-10px); }
-        }
+        /* ================= 階段 3：超複雜 FUI 主介面 ================= */
+        .ui-wrapper { width: 95%; height: 95%; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 20; }
 
-        /* ================= 階段 3：主登入介面 (FUI) ================= */
-        .ui-container { width: 90%; height: 90%; display: flex; justify-content: space-between; align-items: center; position: relative; }
+        /* --- 裝飾性四角定位框 --- */
+        .corner-bracket { position: absolute; width: 50px; height: 50px; border: 2px solid var(--primary); opacity: 0.5; }
+        .cb-tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+        .cb-tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+        .cb-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+        .cb-br { bottom: 0; right: 0; border-left: none; border-top: none; }
 
-        /* 側邊面板 */
+        /* --- 側邊面板進階 --- */
         .side-panel {
-            width: 250px; padding: 20px;
-            background: rgba(10, 10, 12, 0.6);
-            border: 1px solid rgba(226, 183, 100, 0.3);
-            backdrop-filter: blur(10px);
-            box-shadow: var(--neon-glow);
-            opacity: 0; transform: translateX(-50px);
-            transition: all 1s cubic-bezier(0.1, 0.8, 0.2, 1);
+            width: 320px; padding: 25px;
+            background: linear-gradient(135deg, rgba(20,20,25,0.8) 0%, rgba(10,10,15,0.9) 100%);
+            border: 1px solid rgba(226, 183, 100, 0.4);
+            border-top: 4px solid var(--primary);
+            backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.8), var(--glow-primary);
+            opacity: 0; transform: translateX(-100px) skewX(-5deg);
+            transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative; overflow: hidden;
         }
-        .side-panel.right { transform: translateX(50px); }
-        .side-panel.show { opacity: 1; transform: translateX(0); }
+        .side-panel::before { content:''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); animation: scan-panel 4s infinite; }
+        @keyframes scan-panel { 100% { left: 200%; } }
 
-        .panel-title { font-size: 12px; border-bottom: 1px solid var(--theme-gold); padding-bottom: 5px; margin-bottom: 15px; letter-spacing: 2px; }
-        .data-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; color: #ccc; }
-        .data-value.green { color: #0f0; text-shadow: 0 0 5px rgba(0, 255, 0, 0.5); }
+        .side-panel.right { transform: translateX(100px) skewX(5deg); }
+        .side-panel.show { opacity: 1; transform: translateX(0) skewX(0); }
 
-        /* 中央魔法陣與按鈕 */
+        .panel-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--primary); padding-bottom: 8px; margin-bottom: 20px; }
+        .panel-title { font-size: 16px; font-weight: bold; letter-spacing: 3px; }
+        .panel-hex { font-size: 10px; color: var(--cyan); opacity: 0.8; }
+
+        .data-block { margin-bottom: 15px; }
+        .data-label { font-size: 10px; color: #999; margin-bottom: 4px; display: block; letter-spacing: 1px; }
+        .data-value { font-size: 14px; font-weight: bold; color: #fff; letter-spacing: 1px; display: flex; justify-content: space-between; }
+        .val-hl { color: var(--cyan); text-shadow: var(--glow-cyan); }
+        .val-warn { color: var(--alert); text-shadow: 0 0 10px var(--alert); }
+
+        /* 動態長條圖 */
+        .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 40px; margin-top: 10px; border-bottom: 1px solid #444; padding-bottom: 2px; }
+        .chart-bar { flex: 1; background: var(--secondary); opacity: 0.7; transition: height 0.2s; box-shadow: 0 0 5px var(--secondary); }
+
+        /* --- 終極複雜中央魔法陣 --- */
         .center-core {
-            position: relative; width: 500px; height: 500px;
+            position: relative; width: 650px; height: 650px;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
-            transform: scale(0.8) rotate(-10deg); opacity: 0;
-            transition: all 1.2s cubic-bezier(0.1, 0.8, 0.2, 1);
+            transform: scale(0.5) rotate(45deg); opacity: 0;
+            transition: all 1.5s cubic-bezier(0.1, 0.9, 0.2, 1);
         }
         .center-core.show { transform: scale(1) rotate(0deg); opacity: 1; }
 
-        /* 純 CSS 繪製魔法陣 */
-        .magic-circle { position: absolute; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .circle-1 { width: 450px; height: 450px; border: 1px dashed rgba(226, 183, 100, 0.5); animation: spin 40s linear infinite reverse; }
-        .circle-2 { width: 380px; height: 380px; border: 2px solid rgba(211, 115, 36, 0.4); box-shadow: inset 0 0 20px rgba(211,115,36,0.2); animation: spin 20s linear infinite; }
-        .circle-3 { width: 300px; height: 300px; border: 3px double rgba(226, 183, 100, 0.8); box-shadow: var(--neon-glow); animation: spin 10s linear infinite reverse; }
+        .layer { position: absolute; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        
+        /* 第1層：最外圍刻度圈 */
+        .ring-outer { width: 600px; height: 600px; border: 2px dashed rgba(226, 183, 100, 0.3); animation: spin 60s linear infinite; }
+        /* 第2層：六角形幾何 (透過 clip-path 切割) */
+        .ring-hex { width: 540px; height: 540px; border: 2px solid rgba(211, 115, 36, 0.6); clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); animation: spin 40s linear infinite reverse; box-shadow: var(--glow-primary); }
+        /* 第3層：粗實線能量環 */
+        .ring-thick { width: 480px; height: 480px; border: 8px solid rgba(226, 183, 100, 0.15); border-left-color: var(--primary); border-right-color: var(--primary); animation: spin 20s ease-in-out infinite alternate; }
+        /* 第4層：點狀資料環 */
+        .ring-dotted { width: 420px; height: 420px; border: 4px dotted var(--secondary); animation: spin 30s linear infinite; opacity: 0.8; }
+        /* 第5層：雷達掃描光束 */
+        .ring-radar { width: 380px; height: 380px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 70%, rgba(226, 183, 100, 0.4) 100%); animation: spin 5s linear infinite; mask-image: radial-gradient(transparent 65%, black 66%); -webkit-mask-image: radial-gradient(transparent 65%, black 66%); }
+        /* 第6層：細節內環與十字準星 */
+        .ring-inner { width: 300px; height: 300px; border: 1px solid var(--primary); box-shadow: inset 0 0 30px rgba(226, 183, 100, 0.2); animation: spin 15s linear infinite reverse; }
+        .crosshair { position: absolute; width: 100%; height: 100%; }
+        .crosshair::before { content:''; position:absolute; top:50%; left:0; width:100%; height:1px; background:rgba(226,183,100,0.3); }
+        .crosshair::after { content:''; position:absolute; top:0; left:50%; width:1px; height:100%; background:rgba(226,183,100,0.3); }
 
         @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
 
-        /* 登入按鈕群 */
-        .login-box { z-index: 10; display: flex; flex-direction: column; gap: 15px; text-align: center; }
-        .login-title { font-size: 24px; letter-spacing: 6px; text-shadow: var(--neon-glow); margin-bottom: 20px; font-family: sans-serif; font-weight: 300; }
+        /* --- 登入互動模組 --- */
+        .login-module { z-index: 50; text-align: center; background: rgba(5,5,8,0.7); padding: 30px 40px; border: 1px solid var(--primary); border-radius: 8px; backdrop-filter: blur(5px); box-shadow: 0 0 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(226, 183, 100, 0.1); }
+        .brand-logo { font-size: 26px; letter-spacing: 8px; margin-bottom: 25px; font-weight: bold; text-shadow: var(--glow-primary); }
         
-        .login-btn {
-            background: rgba(20, 20, 20, 0.8); border: 1px solid var(--theme-gold); color: var(--theme-gold);
-            padding: 12px 40px; font-size: 14px; letter-spacing: 2px; cursor: pointer; position: relative; overflow: hidden;
-            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px;
-            backdrop-filter: blur(5px);
+        .btn-group { display: flex; flex-direction: column; gap: 15px; }
+        .btn-cyber {
+            background: transparent; border: 1px solid var(--secondary); color: var(--primary);
+            padding: 15px 30px; font-size: 14px; font-weight: bold; letter-spacing: 3px; font-family: 'Consolas', monospace;
+            cursor: pointer; position: relative; overflow: hidden; transition: 0.3s;
+            text-transform: uppercase;
         }
-        .login-btn:hover { background: rgba(226, 183, 100, 0.2); box-shadow: var(--neon-glow); text-shadow: 0 0 5px #fff; }
-        .login-btn::before {
-            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        .login-btn:hover::before { left: 100%; }
+        .btn-cyber::before { content: '[ '; color: var(--secondary); transition: 0.3s; margin-right: 5px; opacity: 0; }
+        .btn-cyber::after { content: ' ]'; color: var(--secondary); transition: 0.3s; margin-left: 5px; opacity: 0; }
+        .btn-cyber:hover { background: rgba(211, 115, 36, 0.2); box-shadow: var(--glow-primary); color: #fff; border-color: var(--primary); }
+        .btn-cyber:hover::before, .btn-cyber:hover::after { opacity: 1; margin: 0 10px; color: #fff; }
+        
+        .sys-msg { font-size: 10px; color: #777; margin-top: 15px; letter-spacing: 2px; }
 
     </style>
 </head>
 <body>
 
-    <div id="dynamic-bg"></div>
+    <div class="scanlines"></div>
+    <div class="perspective-grid" id="grid-bg"></div>
 
     <div id="phase-1" class="screen-phase active">
-        <div id="terminal-output"></div>
-        <div id="terminal-success" class="terminal-success">[ SECURE CONNECTION ESTABLISHED ]</div>
+        <div id="term-content"></div>
+        <div id="term-success" class="term-success">>> SECURE CONNECTION ESTABLISHED. READY FOR DIVE.</div>
     </div>
 
     <div id="phase-2" class="screen-phase">
-        <div class="welcome-text">FANTASY LORE GUARDIAN</div>
-        <div class="system-voice">LINK START_</div>
+        <div class="welcome-box">
+            <div class="welcome-text">SWORD ART ONLINE</div>
+            <div class="welcome-sub">SYSTEM PROTOTYPE v4.0.2</div>
+        </div>
     </div>
 
     <div id="phase-3" class="screen-phase">
-        <div class="ui-container">
+        
+        <div class="corner-bracket cb-tl"></div><div class="corner-bracket cb-tr"></div>
+        <div class="corner-bracket cb-bl"></div><div class="corner-bracket cb-br"></div>
+
+        <div class="ui-wrapper">
+            
             <div class="side-panel" id="panel-left">
-                <div class="panel-title">SYSTEM STATUS</div>
-                <div class="data-row"><span>CORE STATUS</span><span class="data-value green">NORMAL</span></div>
-                <div class="data-row"><span>NETWORK</span><span class="data-value green">SECURE</span></div>
-                <div class="data-row"><span>AI MODULE</span><span class="data-value">ACTIVE</span></div>
-                <div class="data-row"><span>ENCRYPTION</span><span class="data-value">AES-256</span></div>
-                <br>
-                <div class="panel-title">LOCATION DATA</div>
-                <div class="data-row"><span>REGION</span><span class="data-value">NEW TAIPEI CITY</span></div>
-                <div class="data-row"><span>DISTRICT</span><span class="data-value">TAMSUI</span></div>
+                <div class="panel-header">
+                    <span class="panel-title">SYS_CORE_MONITOR</span>
+                    <span class="panel-hex" id="rand-hex-1">0x00FA89</span>
+                </div>
+                
+                <div class="data-block">
+                    <span class="data-label">NEURAL SYNC RATE</span>
+                    <span class="data-value"><span class="val-hl" id="sync-rate">0.00%</span> <span>[ACTIVE]</span></span>
+                </div>
+                
+                <div class="data-block">
+                    <span class="data-label">MEMORY ALLOCATION</span>
+                    <span class="data-value"><span>VRAM: 24GB</span> <span class="val-warn">89%</span></span>
+                </div>
+
+                <div class="data-block">
+                    <span class="data-label">REAL-TIME DATA FLOW</span>
+                    <div class="chart-container" id="chart-left">
+                        </div>
+                </div>
+
+                <div class="data-block" style="margin-top:20px;">
+                    <span class="data-label">SERVER LATENCY</span>
+                    <span class="data-value"><span class="val-hl">12 ms</span> <span>TOKYO_01</span></span>
+                </div>
             </div>
 
             <div class="center-core" id="core-ui">
-                <div class="magic-circle circle-1"></div>
-                <div class="magic-circle circle-2"></div>
-                <div class="magic-circle circle-3"></div>
-                <div class="login-box">
-                    <div class="login-title">LOGIN SYSTEM</div>
-                    <button class="login-btn">使用 Google 登入</button>
-                    <button class="login-btn">以訪客身份登入</button>
-                    <div style="font-size: 10px; color: #666; margin-top: 10px;">SYSTEM ACCESS - AUTHENTICATION REQUIRED</div>
+                <div class="layer ring-outer"></div>
+                <div class="layer ring-hex"></div>
+                <div class="layer ring-thick"></div>
+                <div class="layer ring-dotted"></div>
+                <div class="layer ring-radar"></div>
+                <div class="layer ring-inner"><div class="crosshair"></div></div>
+                
+                <div class="login-module">
+                    <div class="brand-logo">A I N C R A D</div>
+                    <div class="btn-group">
+                        <button class="btn-cyber">Authenticate via Google</button>
+                        <button class="btn-cyber">Guest Protocol Dive</button>
+                    </div>
+                    <div class="sys-msg">BIOMETRIC SCAN STANDBY...</div>
                 </div>
             </div>
 
             <div class="side-panel right" id="panel-right">
-                <div class="panel-title">SYSTEM ANALYSIS</div>
-                <div class="data-row"><span>PLATFORM</span><span class="data-value">NerveGear OS v2.1</span></div>
-                <div class="data-row"><span>SYNC RATE</span><span class="data-value green">99.8%</span></div>
-                <div class="data-row"><span>ARCHITECTURE</span><span class="data-value">x64</span></div>
-                <br>
-                <div class="panel-title">DEVICE INFO</div>
-                <div class="data-row"><span>DISPLAY</span><span class="data-value">FULL DIVE VR</span></div>
-                <div class="data-row"><span>LATENCY</span><span class="data-value green">12ms</span></div>
+                <div class="panel-header">
+                    <span class="panel-title">ENVIRONMENT_ENV</span>
+                    <span class="panel-hex" id="rand-hex-2">0x00B4C1</span>
+                </div>
+
+                <div class="data-block">
+                    <span class="data-label">LOCATION COORDINATES</span>
+                    <span class="data-value"><span>LAT 25.17°</span> <span>LON 121.43°</span></span>
+                    <span class="data-value" style="font-size:10px; color:#888; margin-top:2px;">TAMSUI_DISTRICT, TW</span>
+                </div>
+
+                <div class="data-block">
+                    <span class="data-label">THREAT LEVEL</span>
+                    <span class="data-value"><span style="color:#0f0;">SAFE (CLASS D)</span></span>
+                </div>
+
+                <div class="data-block">
+                    <span class="data-label">PACKET TRANSMISSION</span>
+                    <div class="chart-container" id="chart-right">
+                        </div>
+                </div>
+
+                <div class="data-block" style="margin-top:20px;">
+                    <span class="data-label">SESSION ID</span>
+                    <span class="data-value" style="font-size:12px; color:#aaa;" id="session-id">AX-9932-B</span>
+                </div>
             </div>
+
         </div>
     </div>
 
     <script>
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        async function typeTerminalText(texts) {
-            const output = document.getElementById('terminal-output');
-            for (let text of texts) {
-                let p = document.createElement('div');
-                p.className = 'terminal-text';
-                output.appendChild(p);
-                for (let i = 0; i < text.length; i++) {
-                    p.innerHTML += text.charAt(i);
-                    await sleep(15); // 稍微調快打字速度
-                }
-                await sleep(200);
+        // 建立假長條圖
+        function createCharts(elementId, count) {
+            const container = document.getElementById(elementId);
+            for(let i=0; i<count; i++) {
+                let bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = Math.random() * 100 + '%';
+                container.appendChild(bar);
             }
         }
+        createCharts('chart-left', 20);
+        createCharts('chart-right', 20);
 
-        async function runLoginSequence() {
-            // --- 階段 1：連線檢測 (黑底) ---
-            const bootLogs = [
-                "[14:47:28] Core initialization complete.",
-                "[14:47:28] Encryption module loaded.",
-                "[14:47:29] Firewall active.",
-                "[14:47:29] Sense sync: OK.",
-                "Authenticating login protocol..."
+        // 動態更新資料 (讓 UI 活起來)
+        setInterval(() => {
+            // 更新長條圖高度
+            document.querySelectorAll('.chart-bar').forEach(bar => {
+                if(Math.random() > 0.5) bar.style.height = (Math.random() * 80 + 20) + '%';
+            });
+            // 更新十六進位碼
+            document.getElementById('rand-hex-1').innerText = '0x' + Math.floor(Math.random()*16777215).toString(16).toUpperCase().padStart(6, '0');
+            document.getElementById('rand-hex-2').innerText = '0x' + Math.floor(Math.random()*16777215).toString(16).toUpperCase().padStart(6, '0');
+            // 更新同步率
+            let sync = parseFloat(document.getElementById('sync-rate').innerText);
+            if(sync < 99.8) document.getElementById('sync-rate').innerText = (sync + (Math.random() * 2)).toFixed(2) + '%';
+        }, 300);
+
+        // 終端機動畫
+        async function runBootSequence() {
+            const term = document.getElementById('term-content');
+            const logs = [
+                { t: "Initiating FullDive environment...", d: 200 },
+                { t: "Loading NerveGear BIOS v2.04... <span class='term-highlight'>[OK]</span>", d: 150 },
+                { t: "Checking cardinal system connectivity... <span class='term-highlight'>[OK]</span>", d: 300 },
+                { t: "Bypassing local security protocols... <span style='color:yellow'>[WARNING: Overridden]</span>", d: 400 },
+                { t: "Compiling environmental geometry...", d: 100, bar: true },
+                { t: "Synchronizing sensory inputs: Sight, Hearing, Touch...", d: 500 }
             ];
-            await typeTerminalText(bootLogs);
-            document.getElementById('terminal-success').style.display = 'block';
-            await sleep(1000);
 
-            // --- 階段 2：深空歡迎字樣 ---
-            // 背景平滑切換成深空漸層
-            document.getElementById('dynamic-bg').classList.add('space-mode');
+            for (let log of logs) {
+                let line = document.createElement('div');
+                line.className = 'term-line';
+                line.innerHTML = '> ' + log.t;
+                term.appendChild(line);
+                
+                if (log.bar) {
+                    let pBar = document.createElement('div'); pBar.className = 'loading-bar';
+                    let pFill = document.createElement('div'); pFill.className = 'loading-fill';
+                    pBar.appendChild(pFill);
+                    line.appendChild(pBar);
+                    // 跑進度條動畫
+                    for(let i=1; i<=10; i++) {
+                        pFill.style.width = (i*10) + '%';
+                        await sleep(50);
+                    }
+                }
+                await sleep(log.d);
+            }
+            
+            document.getElementById('term-success').style.display = 'block';
+            await sleep(1200);
+
+            // 進入階段 2 (深空)
             document.getElementById('phase-1').classList.remove('active');
             document.getElementById('phase-2').classList.add('active');
-            
-            await sleep(2500); // 讓歡迎字樣停留
+            await sleep(2500);
 
-            // --- 階段 3：展開主介面 ---
+            // 進入階段 3 (主介面)
             document.getElementById('phase-2').classList.remove('active');
             document.getElementById('phase-3').classList.add('active');
             
-            await sleep(400); // 稍微等待 UI 容器準備好
+            // 開啟透視網格背景
+            document.getElementById('grid-bg').classList.add('show');
+            await sleep(300);
             
-            // 觸發 UI 展開動畫 (加入輕微旋轉與放大效果)
+            // 華麗展開動畫
             document.getElementById('core-ui').classList.add('show');
-            await sleep(600);
+            await sleep(800);
             document.getElementById('panel-left').classList.add('show');
             document.getElementById('panel-right').classList.add('show');
+            
+            // 快速拉滿同步率
+            document.getElementById('sync-rate').innerText = "99.89%";
         }
 
-        window.onload = runLoginSequence;
+        window.onload = runBootSequence;
     </script>
-
 </body>
 </html>
