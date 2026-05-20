@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fantasy Lore Guardian - SAO Adaptive Protocol</title>
+    <title>Fantasy Lore Guardian - VFX Ultimate (Calibrated)</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Noto+Serif+TC:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     
@@ -14,41 +14,61 @@
             --font-en: 'Cinzel', serif; --font-tw: 'Noto Serif TC', serif;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background-color: var(--obsidian); color: var(--dark-gold); font-family: var(--font-tw); overflow: hidden; width: 100vw; height: 100vh; }
-        #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; background: radial-gradient(circle at center, transparent 30%, rgba(5,5,5,0.9) 100%); }
+        body { background-color: var(--obsidian); color: var(--dark-gold); font-family: var(--font-tw); overflow: hidden; width: 100vw; height: 100vh; perspective: 1000px; }
+        
+        #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: auto; }
+        
+        #ui-layer { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; 
+            display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; 
+            background: radial-gradient(circle at center, transparent 20%, rgba(5,5,5,0.95) 100%); 
+            transform-style: preserve-3d;
+        }
         @media (max-width: 600px) { #ui-layer { padding: 1rem; } }
-        .scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1)); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.2; }
+        
+        .scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15)); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.3; mix-blend-mode: overlay; }
         .sys-text-en { font-family: var(--font-en); font-size: 0.7rem; letter-spacing: 2px; color: var(--amber); opacity: 0.7; }
-        #hud-top { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; }
+        
+        #hud-top { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; transform: translateZ(20px); }
         .top-center { text-align: center; }
         .top-center h1 { font-family: var(--font-en); font-size: 1.5rem; letter-spacing: 8px; color: var(--dark-gold); }
         .top-center p { font-family: var(--font-tw); font-size: 0.8rem; letter-spacing: 5px; color: var(--ash); margin-top: 5px; }
         @media (max-width: 768px) { .sys-text-en { display: none; } .top-center { width: 100%; } .top-center h1 { font-size: 1.2rem; letter-spacing: 4px; } }
         
-        .sao-window { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(5, 5, 5, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--dark-gold); box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 0 15px rgba(179,128,48,0.15); pointer-events: auto; display: flex; flex-direction: column; opacity: 0; transform-origin: center center; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); z-index: 50; }
+        .sao-window { 
+            position: absolute; left: 50%; top: 50%; 
+            /* Instead of simple transform, we let GSAP handle the 3D translation/rotation */
+            background: rgba(8, 8, 8, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); 
+            border: 1px solid var(--dark-gold); box-shadow: 0 15px 35px rgba(0,0,0,0.9), inset 0 0 20px rgba(179,128,48,0.2); 
+            pointer-events: auto; display: flex; flex-direction: column; opacity: 0; 
+            transform-origin: center center; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); 
+            z-index: 50; 
+        }
         .sao-header { background: rgba(179, 128, 48, 0.2); border-bottom: 1px solid var(--dark-gold); padding: 10px 15px; font-family: var(--font-en); font-size: 0.8rem; letter-spacing: 3px; color: var(--amber); display: flex; align-items: center; gap: 10px; }
         .sao-body { padding: 25px; display: flex; flex-direction: column; gap: 20px; }
         .sao-prompt { font-size: 0.9rem; color: var(--ash); line-height: 1.6; letter-spacing: 2px; }
+        
         .sao-input-group { position: relative; }
-        .sao-input { width: 100%; background: rgba(0,0,0,0.4); border: none; border-bottom: 1px solid rgba(179,128,48,0.4); color: var(--amber); font-family: var(--font-tw); font-size: 1rem; padding: 12px 5px; outline: none; transition: all 0.3s ease; letter-spacing: 2px; }
+        .sao-input { width: 100%; background: rgba(0,0,0,0.5); border: none; border-bottom: 1px solid rgba(179,128,48,0.4); color: var(--amber); font-family: var(--font-tw); font-size: 1rem; padding: 12px 5px; outline: none; transition: all 0.3s ease; letter-spacing: 2px; }
         .sao-input::placeholder { color: rgba(136, 136, 136, 0.4); }
-        .sao-input:focus { border-bottom-color: var(--amber); box-shadow: 0 5px 15px -5px rgba(255,153,0,0.3); background: rgba(179,128,48,0.05); }
+        .sao-input:focus { border-bottom-color: var(--amber); box-shadow: 0 5px 15px -5px rgba(255,153,0,0.4); background: rgba(179,128,48,0.1); }
+        
         .sao-footer { display: flex; border-top: 1px solid rgba(179, 128, 48, 0.3); margin-top: auto; }
         .sao-btn { flex: 1; background: transparent; border: none; color: var(--ash); font-family: var(--font-tw); font-size: 0.95rem; padding: 14px 0; cursor: pointer; transition: all 0.2s; letter-spacing: 3px; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .sao-btn:hover { background: rgba(179, 128, 48, 0.15); color: var(--amber); }
+        .sao-btn:hover { background: rgba(179, 128, 48, 0.2); color: var(--amber); }
         .sao-btn.confirm { border-left: 1px solid rgba(179, 128, 48, 0.3); }
         .sao-btn.confirm:hover { color: var(--dark-gold); text-shadow: 0 0 10px var(--amber); }
-        .sao-btn.cancel:hover { color: var(--ember-red); text-shadow: 0 0 10px var(--ember-red); }
+        .sao-btn.cancel:hover { color: var(--ember-red); text-shadow: 0 0 10px var(--ember-red); background: rgba(255,51,0,0.1); }
         
-        #sao-auth { width: calc(100% - 2rem); max-width: 400px; }
-        #sao-warning { width: calc(100% - 2rem); max-width: 460px; border-color: var(--ember-red); box-shadow: 0 0 40px rgba(255,51,0,0.25), inset 0 0 15px rgba(255,51,0,0.15); display: none; z-index: 100; }
+        #sao-auth { width: calc(100% - 2rem); max-width: 420px; }
+        #sao-warning { width: calc(100% - 2rem); max-width: 480px; border-color: var(--ember-red); box-shadow: 0 20px 40px rgba(255,51,0,0.2), inset 0 0 20px rgba(255,51,0,0.15); display: none; z-index: 100; }
         #sao-warning .sao-header { background: rgba(255, 51, 0, 0.2); border-bottom-color: var(--ember-red); color: var(--ember-red); }
         #sao-warning .sao-prompt { color: var(--dark-gold); text-align: center; }
+        
         #operational-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; opacity: 0; pointer-events: none; z-index: 20; width: 90%; }
-        #operational-msg h2 { font-family: var(--font-tw); font-size: 2.5rem; letter-spacing: 15px; color: var(--amber); text-shadow: 0 0 30px var(--ember-red); margin-bottom: 10px;}
-        #operational-msg p { font-family: var(--font-en); font-size: 1rem; letter-spacing: 8px; color: var(--dark-gold); }
-        @media (max-width: 600px) { #operational-msg h2 { font-size: 1.8rem; letter-spacing: 8px; } }
+        #operational-msg h2 { font-family: var(--font-tw); font-size: 2.2rem; letter-spacing: 12px; color: #f4d081; text-shadow: 0 0 20px rgba(244, 208, 129, 0.5); margin-bottom: 10px;}
+        #operational-msg p { font-family: var(--font-en); font-size: 1rem; letter-spacing: 10px; color: var(--dark-gold); }
+        @media (max-width: 600px) { #operational-msg h2 { font-size: 1.5rem; letter-spacing: 8px; } }
     </style>
 
     <script type="importmap">
@@ -63,6 +83,7 @@
 <body>
     <div class="scanlines"></div>
     <div id="webgl-container"></div>
+    
     <div id="ui-layer">
         <div id="hud-top">
             <div class="sys-text-en">ARCHIVE COORDINATES<br>N 45.29 / W 12.08</div>
@@ -100,8 +121,8 @@
     </div>
 
     <div id="operational-msg">
-        <h2>世界觀核心已啟動</h2>
-        <p>EDITORIAL MODE ONLINE</p>
+        <h2>世界觀核心已淨化</h2>
+        <p id="decrypt-text">EDITORIAL MODE ONLINE</p>
     </div>
 
     <script type="module">
@@ -109,10 +130,12 @@
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
+        /* 1. Base Setup */
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.04);
+        scene.fog = new THREE.FogExp2(0x050505, 0.05); 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 0, 15);
         const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
@@ -120,15 +143,55 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        const renderScene = new RenderPass(scene, camera);
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0.2; bloomPass.strength = 1.2; bloomPass.radius = 0.5;
-        const composer = new EffectComposer(renderer);
-        composer.addPass(renderScene); composer.addPass(bloomPass);
+        /* 2. Interactive Parallax Tracking */
+        const mouse = new THREE.Vector2(0, 0);
+        const targetMouse = new THREE.Vector2(0, 0);
+        const windowHalf = new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2);
+        
+        const onMouseMove = (e) => {
+            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            if(clientX !== undefined) {
+                targetMouse.x = (clientX - windowHalf.x) / windowHalf.x;
+                targetMouse.y = (clientY - windowHalf.y) / windowHalf.y;
+            }
+        };
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('touchmove', onMouseMove);
 
+        /* 3. Advanced Post-Processing (Chromatic Aberration + Vignette) */
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.6, 0.5, 0.85);
+        bloomPass.threshold = 0.15;
+        
+        const CinematicShader = {
+            uniforms: { "tDiffuse": { value: null }, "amount": { value: 1.2 } },
+            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                uniform sampler2D tDiffuse; uniform float amount; varying vec2 vUv;
+                void main() {
+                    float dist = distance(vUv, vec2(0.5));
+                    vec2 offset = vec2(dist * 0.01 * amount, 0.0);
+                    float r = texture2D(tDiffuse, vUv + offset).r;
+                    float g = texture2D(tDiffuse, vUv).g;
+                    float b = texture2D(tDiffuse, vUv - offset).b;
+                    vec3 color = vec3(r,g,b);
+                    color *= smoothstep(0.8, amount * 0.3, dist); // Vignette
+                    gl_FragColor = vec4(color, 1.0);
+                }
+            `
+        };
+        const cinematicPass = new ShaderPass(CinematicShader);
+        
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+        composer.addPass(cinematicPass);
+
+        /* 4. Shaders - CALIBRATED FOR EXPOSURE CONTROL */
         const runeVertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
         const runeFragmentShader = `
-            uniform float uTime; uniform vec3 uColor; uniform float uDensity; varying vec2 vUv;
+            uniform float uTime; uniform vec3 uColor; uniform vec3 uSyncColor; uniform float uDensity; uniform float uState; varying vec2 vUv;
             float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
             void main() {
                 float segment = floor(vUv.x * uDensity); float id = hash(vec2(segment, 1.0));
@@ -136,9 +199,11 @@
                 float shape = step(0.5, hash(vec2(segment, floor(vUv.y * 5.0))));
                 float alpha = shape * flicker * (id > 0.3 ? 1.0 : 0.0);
                 alpha *= smoothstep(0.0, 0.1, vUv.y) * smoothstep(1.0, 0.9, vUv.y);
-                gl_FragColor = vec4(uColor, alpha * 0.8);
+                vec3 finalColor = mix(uColor, uSyncColor, uState);
+                gl_FragColor = vec4(finalColor, alpha * 0.7); // Slightly lowered base alpha to prevent blowout
             }
         `;
+
         const coreVertexShader = `
             uniform float uTime; uniform float uDistortion; varying vec2 vUv; varying vec3 vNormal;
             vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; } vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; } vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); } vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
@@ -153,34 +218,94 @@
             void main() { vUv = uv; vNormal = normal; float noise = snoise(position * 2.0 + uTime * 0.5) * uDistortion; vec3 newPos = position + normal * noise; gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0); }
         `;
         const coreFragmentShader = `
-            uniform float uTime; uniform float uIntensity; varying vec2 vUv; varying vec3 vNormal;
-            void main() { float fresnel = pow(clamp(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0, 1.0), 3.0); vec3 finalColor = mix(vec3(0.02), vec3(1.0, 0.6, 0.0), fresnel * uIntensity); finalColor += vec3(1.0, 0.2, 0.0) * (sin(uTime * 2.0) * 0.5 + 0.5) * (1.0-fresnel) * uIntensity * 0.5; gl_FragColor = vec4(finalColor, 1.0); }
+            uniform float uTime; uniform float uIntensity; uniform float uState; varying vec2 vUv; varying vec3 vNormal;
+            void main() {
+                float fresnel = pow(clamp(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0, 1.0), 3.0);
+                
+                // Idle State (Ember/Obsidian)
+                vec3 idleBase = mix(vec3(0.02), vec3(1.0, 0.5, 0.0), fresnel * uIntensity);
+                idleBase += vec3(1.0, 0.1, 0.0) * (sin(uTime * 2.0) * 0.5 + 0.5) * (1.0-fresnel) * uIntensity * 0.6;
+                
+                // Purified State (Arcane Gold - Controlled Exposure)
+                // Reduced the extreme white to a refined, deep golden tone
+                vec3 syncBase = mix(vec3(0.02, 0.02, 0.03), vec3(0.8, 0.7, 0.3), fresnel * uIntensity);
+                syncBase += vec3(0.9, 0.8, 0.5) * (sin(uTime * 3.0) * 0.5 + 0.5) * (1.0-fresnel) * uIntensity * 0.5;
+                
+                vec3 finalColor = mix(idleBase, syncBase, uState);
+                gl_FragColor = vec4(finalColor, 1.0);
+            }
         `;
 
+        /* 5. Building the World */
         const systemGroup = new THREE.Group(); scene.add(systemGroup);
-        const coreMaterial = new THREE.ShaderMaterial({ vertexShader: coreVertexShader, fragmentShader: coreFragmentShader, uniforms: { uTime: { value: 0 }, uDistortion: { value: 0.1 }, uIntensity: { value: 1.0 } } });
-        systemGroup.add(new THREE.Mesh(new THREE.IcosahedronGeometry(2, 4), coreMaterial));
+        
+        const coreMaterial = new THREE.ShaderMaterial({ 
+            vertexShader: coreVertexShader, fragmentShader: coreFragmentShader, 
+            uniforms: { uTime: { value: 0 }, uDistortion: { value: 0.1 }, uIntensity: { value: 1.0 }, uState: { value: 0.0 } } 
+        });
+        const coreMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 4), coreMaterial);
+        systemGroup.add(coreMesh);
 
-        const runeRings = []; const ringCount = window.innerWidth < 600 ? 12 : 24;
+        const runeRings = []; 
+        const ringCount = window.innerWidth < 600 ? 12 : 24;
         for (let i = 0; i < ringCount; i++) {
-            const mat = new THREE.ShaderMaterial({ vertexShader: runeVertexShader, fragmentShader: runeFragmentShader, uniforms: { uTime: { value: 0 }, uColor: { value: [new THREE.Color(0xb38030), new THREE.Color(0xff9900), new THREE.Color(0xff3300)][i%3] }, uDensity: { value: 20.0 + Math.random() * 80.0 } }, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+            const mat = new THREE.ShaderMaterial({ 
+                vertexShader: runeVertexShader, fragmentShader: runeFragmentShader, 
+                uniforms: { 
+                    uTime: { value: 0 }, 
+                    uColor: { value: [new THREE.Color(0xb38030), new THREE.Color(0xff6600), new THREE.Color(0xff3300)][i%3] }, 
+                    uSyncColor: { value: new THREE.Color(0xf4d081) }, // Warm Arcane Gold
+                    uDensity: { value: 20.0 + Math.random() * 80.0 },
+                    uState: { value: 0.0 }
+                }, 
+                transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide 
+            });
             const ring = new THREE.Mesh(new THREE.TorusGeometry(2.5 + (i * 0.25), 0.02 + Math.random() * 0.03, 3, 100), mat);
             ring.rotation.set(Math.random() * 6.28, Math.random() * 6.28, 0);
-            ring.userData = { axis: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize(), speed: (Math.random() * 0.005 + 0.001) * (Math.random() > 0.5 ? 1 : -1) };
-            ring.userData.baseSpeed = ring.userData.speed; runeRings.push(ring); systemGroup.add(ring);
+            ring.userData = { 
+                axis: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize(), 
+                speed: (Math.random() * 0.005 + 0.001) * (Math.random() > 0.5 ? 1 : -1) 
+            };
+            ring.userData.baseSpeed = ring.userData.speed; 
+            runeRings.push(ring); systemGroup.add(ring);
         }
 
+        const particleCount = window.innerWidth < 600 ? 500 : 1500;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(particleCount * 3);
+        const pData = []; 
+        for(let i=0; i<particleCount; i++) {
+            const r = 3 + Math.random() * 12;
+            const angle = Math.random() * Math.PI * 2;
+            const y = (Math.random() - 0.5) * 8;
+            pPos[i*3] = Math.cos(angle) * r; pPos[i*3+1] = y; pPos[i*3+2] = Math.sin(angle) * r;
+            pData.push({ radius: r, angle: angle, y: y, speed: 0.002 + Math.random() * 0.005 });
+        }
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        const pMat = new THREE.PointsMaterial({ color: 0xff8800, size: 0.05, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+        const particleSystem = new THREE.Points(pGeo, pMat);
+        systemGroup.add(particleSystem);
+
+        /* 6. GSAP SAO UI Logic & Effects */
+        let isSyncing = false;
+        
+        // Initial setup for GSAP transforms
+        gsap.set('.sao-window', { xPercent: -50, yPercent: -50 });
+
         setTimeout(() => {
-            gsap.fromTo('#sao-auth', { scaleY: 0.02, scaleX: 0, opacity: 0, xPercent: -50, yPercent: -50 }, { scaleX: 1, opacity: 1, duration: 0.2, ease: "power2.out" });
+            gsap.fromTo('#sao-auth', { scaleY: 0.02, scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.2, ease: "power2.out" });
             gsap.to('#sao-auth', { scaleY: 1, duration: 0.3, ease: "back.out(1.2)", delay: 0.2 });
         }, 1000);
 
-        window.triggerGlitch = () => { gsap.to('#sao-auth', { x: "+=10", yoyo: true, repeat: 5, duration: 0.05 }); gsap.to('#sao-auth', { borderColor: "var(--ember-red)", duration: 0.1, yoyo: true, repeat: 1 }); };
+        window.triggerGlitch = () => { 
+            gsap.to('#sao-auth', { x: "+=10", yoyo: true, repeat: 5, duration: 0.05 }); 
+            gsap.to('#sao-auth', { borderColor: "var(--ember-red)", duration: 0.1, yoyo: true, repeat: 1 }); 
+        };
 
         document.getElementById('btn-initiate').addEventListener('click', () => {
             gsap.to('#sao-auth', { filter: "blur(5px)", opacity: 0.3, scale: 0.95, duration: 0.3 });
             const warning = document.getElementById('sao-warning'); warning.style.display = 'flex';
-            gsap.fromTo(warning, { scaleY: 0.02, scaleX: 0, opacity: 0, xPercent: -50, yPercent: -50 }, { scaleX: 1, opacity: 1, duration: 0.15, ease: "power2.out" });
+            gsap.fromTo(warning, { scaleY: 0.02, scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.15, ease: "power2.out" });
             gsap.to(warning, { scaleY: 1, duration: 0.25, ease: "back.out(1.5)", delay: 0.15 });
         });
 
@@ -189,30 +314,116 @@
             gsap.to('#sao-auth', { filter: "blur(0px)", opacity: 1, scale: 1, duration: 0.3, delay: 0.1 });
         });
 
+        // Cryptographic Text Scramble Animation
+        const decryptText = (elementId, finalString) => {
+            const el = document.getElementById(elementId);
+            const chars = '!<>-_\\/[]{}—=+*^?#_';
+            let frame = 0;
+            const update = () => {
+                let currentStr = '';
+                for(let i=0; i<finalString.length; i++) {
+                    if(frame > i * 3) { currentStr += finalString[i]; } 
+                    else { currentStr += chars[Math.floor(Math.random() * chars.length)]; }
+                }
+                el.innerText = currentStr;
+                if(frame < finalString.length * 3) { frame++; requestAnimationFrame(update); }
+            };
+            update();
+        };
+
         document.getElementById('btn-force-sync').addEventListener('click', () => {
+            isSyncing = true;
             gsap.to('.sao-window', { scaleY: 0.02, opacity: 0, duration: 0.2, stagger: 0.05, onComplete: () => { document.querySelectorAll('.sao-window').forEach(el => el.style.display = 'none'); }});
-            gsap.to(bloomPass, { strength: 4.0, radius: 1.2, threshold: 0.1, duration: 1.5, ease: "expo.in" });
-            gsap.to(coreMaterial.uniforms.uDistortion, { value: 0.8, duration: 1.5 });
-            gsap.to(coreMaterial.uniforms.uIntensity, { value: 3.0, duration: 1.5 });
-            runeRings.forEach((r, index) => { gsap.to(r.userData, { speed: r.userData.baseSpeed * 20, duration: 2, ease: "power3.in" }); gsap.to(r.scale, { x: 1.2, y: 1.2, z: 1.2, duration: 1.5, delay: index*0.01 }); });
+            
+            gsap.to(bloomPass, { strength: 4.5, radius: 1.5, threshold: 0.0, duration: 1.5, ease: "expo.in" });
+            gsap.to(cinematicPass.uniforms.amount, { value: 3.0, duration: 1.5 });
+            gsap.to(coreMaterial.uniforms.uDistortion, { value: 1.2, duration: 1.5 });
+            gsap.to(coreMaterial.uniforms.uIntensity, { value: 3.5, duration: 1.5 });
+            
+            runeRings.forEach((r, index) => { 
+                gsap.to(r.userData, { speed: r.userData.baseSpeed * 30, duration: 2, ease: "power3.in" }); 
+                gsap.to(r.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 1.5, delay: index*0.01 }); 
+            });
 
             setTimeout(() => {
-                scene.background = new THREE.Color(0xffaa00);
-                gsap.to(scene.background, { r: 0.02, g: 0.02, b: 0.02, duration: 1.5, ease: "power2.out" });
-                gsap.to(bloomPass, { strength: 1.0, radius: 0.5, duration: 2 }); gsap.to(coreMaterial.uniforms.uDistortion, { value: 0.2, duration: 2 }); gsap.to(coreMaterial.uniforms.uIntensity, { value: 1.2, duration: 2 });
+                // Flashbang softened to a parchment/arcane glow instead of harsh pure white
+                scene.background = new THREE.Color(0xddccaa); 
+                gsap.to(scene.background, { r: 0.03, g: 0.03, b: 0.03, duration: 2.0, ease: "power2.out" }); // Return to near black
+                
+                gsap.to(coreMaterial.uniforms.uState, { value: 1.0, duration: 2.0, ease: "power2.out" });
+                runeRings.forEach(r => gsap.to(r.material.uniforms.uState, { value: 1.0, duration: 2.0 }));
+                gsap.to(pMat.color, { r: 0.9, g: 0.7, b: 0.4, duration: 2.0 }); // Soft gold particles
+
+                // Bloom strength reduced from 1.2 to 0.8 for controlled exposure
+                gsap.to(bloomPass, { strength: 0.8, radius: 0.6, duration: 2 }); 
+                gsap.to(cinematicPass.uniforms.amount, { value: 1.2, duration: 2 }); 
+                gsap.to(coreMaterial.uniforms.uDistortion, { value: 0.15, duration: 2 }); 
+                gsap.to(coreMaterial.uniforms.uIntensity, { value: 1.0, duration: 2 });
                 gsap.to(camera.position, { z: window.innerWidth < 600 ? 12 : 10, duration: 3, ease: "power3.out" });
-                runeRings.forEach(r => { gsap.to(r.userData, { speed: r.userData.baseSpeed * 1.5, duration: 2 }); gsap.to(r.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 2 }); });
+                
+                runeRings.forEach(r => { 
+                    gsap.to(r.userData, { speed: r.userData.baseSpeed * 1.5, duration: 2 }); 
+                    gsap.to(r.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 2, ease: "back.out(1.2)" }); 
+                });
+                
                 gsap.to(document.getElementById('operational-msg'), { opacity: 1, duration: 2, ease: "power1.inOut" });
+                
+                // Trigger Cryptographic Reveal
+                setTimeout(() => decryptText('decrypt-text', 'EDITORIAL MODE ONLINE'), 500);
+
             }, 1800);
         });
 
+        /* 7. Animation Loop with Vortex & UI Parallax Physics */
         const clock = new THREE.Clock();
         function animate() {
-            requestAnimationFrame(animate); const time = clock.getElapsedTime(); coreMaterial.uniforms.uTime.value = time;
-            runeRings.forEach((ring) => { ring.material.uniforms.uTime.value = time; ring.rotateOnAxis(ring.userData.axis, ring.userData.speed); }); composer.render();
-        } animate();
+            requestAnimationFrame(animate); 
+            const time = clock.getElapsedTime(); 
+            coreMaterial.uniforms.uTime.value = time;
+            
+            // Mouse Interaction Smoothness
+            mouse.lerp(targetMouse, 0.08);
+            
+            // WebGL Parallax
+            systemGroup.rotation.x = mouse.y * 0.4;
+            systemGroup.rotation.y = mouse.x * 0.4;
+            camera.position.x += (mouse.x * 2.5 - camera.position.x) * 0.05;
+            camera.position.y += (-mouse.y * 2.5 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
 
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); });
+            // UI HTML Parallax (Tilting the SAO Windows)
+            if(!isSyncing) {
+                gsap.set('.sao-window', { 
+                    rotationY: mouse.x * 15, // Max 15 degrees tilt
+                    rotationX: -mouse.y * 15,
+                    transformPerspective: 1000
+                });
+            }
+
+            runeRings.forEach((ring) => { 
+                ring.material.uniforms.uTime.value = time; 
+                ring.rotateOnAxis(ring.userData.axis, ring.userData.speed); 
+            }); 
+
+            const positions = particleSystem.geometry.attributes.position.array;
+            let vortexSpeedMulti = isSyncing ? 5.0 : 1.0; 
+            for(let i=0; i<particleCount; i++) {
+                let p = pData[i];
+                p.angle -= p.speed * vortexSpeedMulti; 
+                let yOffset = Math.sin(time * 2.0 + i) * 0.2;
+                let repelX = mouse.x * 3.0;
+                let repelY = -mouse.y * 3.0;
+                positions[i*3] = Math.cos(p.angle) * p.radius + repelX;
+                positions[i*3+1] = p.y + yOffset + repelY;
+                positions[i*3+2] = Math.sin(p.angle) * p.radius;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+
+            composer.render();
+        } 
+        animate();
+
+        window.addEventListener('resize', () => { windowHalf.set(window.innerWidth / 2, window.innerHeight / 2); camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
