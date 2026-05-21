@@ -1,429 +1,3608 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fantasy Lore Guardian - VFX Ultimate (Calibrated)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Noto+Serif+TC:wght@300;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <style>
-        :root {
-            --obsidian: #050505; --dark-gold: #b38030; --amber: #ff9900;
-            --ember-red: #ff3300; --ash: #888888;
-            --font-en: 'Cinzel', serif; --font-tw: 'Noto Serif TC', serif;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background-color: var(--obsidian); color: var(--dark-gold); font-family: var(--font-tw); overflow: hidden; width: 100vw; height: 100vh; perspective: 1000px; }
-        
-        #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: auto; }
-        
-        #ui-layer { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; 
-            display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; 
-            background: radial-gradient(circle at center, transparent 20%, rgba(5,5,5,0.95) 100%); 
-            transform-style: preserve-3d;
-        }
-        @media (max-width: 600px) { #ui-layer { padding: 1rem; } }
-        
-        .scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15)); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.3; mix-blend-mode: overlay; }
-        .sys-text-en { font-family: var(--font-en); font-size: 0.7rem; letter-spacing: 2px; color: var(--amber); opacity: 0.7; }
-        
-        #hud-top { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; transform: translateZ(20px); }
-        .top-center { text-align: center; }
-        .top-center h1 { font-family: var(--font-en); font-size: 1.5rem; letter-spacing: 8px; color: var(--dark-gold); }
-        .top-center p { font-family: var(--font-tw); font-size: 0.8rem; letter-spacing: 5px; color: var(--ash); margin-top: 5px; }
-        @media (max-width: 768px) { .sys-text-en { display: none; } .top-center { width: 100%; } .top-center h1 { font-size: 1.2rem; letter-spacing: 4px; } }
-        
-        .sao-window { 
-            position: absolute; left: 50%; top: 50%; 
-            /* Instead of simple transform, we let GSAP handle the 3D translation/rotation */
-            background: rgba(8, 8, 8, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); 
-            border: 1px solid var(--dark-gold); box-shadow: 0 15px 35px rgba(0,0,0,0.9), inset 0 0 20px rgba(179,128,48,0.2); 
-            pointer-events: auto; display: flex; flex-direction: column; opacity: 0; 
-            transform-origin: center center; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); 
-            z-index: 50; 
-        }
-        .sao-header { background: rgba(179, 128, 48, 0.2); border-bottom: 1px solid var(--dark-gold); padding: 10px 15px; font-family: var(--font-en); font-size: 0.8rem; letter-spacing: 3px; color: var(--amber); display: flex; align-items: center; gap: 10px; }
-        .sao-body { padding: 25px; display: flex; flex-direction: column; gap: 20px; }
-        .sao-prompt { font-size: 0.9rem; color: var(--ash); line-height: 1.6; letter-spacing: 2px; }
-        
-        .sao-input-group { position: relative; }
-        .sao-input { width: 100%; background: rgba(0,0,0,0.5); border: none; border-bottom: 1px solid rgba(179,128,48,0.4); color: var(--amber); font-family: var(--font-tw); font-size: 1rem; padding: 12px 5px; outline: none; transition: all 0.3s ease; letter-spacing: 2px; }
-        .sao-input::placeholder { color: rgba(136, 136, 136, 0.4); }
-        .sao-input:focus { border-bottom-color: var(--amber); box-shadow: 0 5px 15px -5px rgba(255,153,0,0.4); background: rgba(179,128,48,0.1); }
-        
-        .sao-footer { display: flex; border-top: 1px solid rgba(179, 128, 48, 0.3); margin-top: auto; }
-        .sao-btn { flex: 1; background: transparent; border: none; color: var(--ash); font-family: var(--font-tw); font-size: 0.95rem; padding: 14px 0; cursor: pointer; transition: all 0.2s; letter-spacing: 3px; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .sao-btn:hover { background: rgba(179, 128, 48, 0.2); color: var(--amber); }
-        .sao-btn.confirm { border-left: 1px solid rgba(179, 128, 48, 0.3); }
-        .sao-btn.confirm:hover { color: var(--dark-gold); text-shadow: 0 0 10px var(--amber); }
-        .sao-btn.cancel:hover { color: var(--ember-red); text-shadow: 0 0 10px var(--ember-red); background: rgba(255,51,0,0.1); }
-        
-        #sao-auth { width: calc(100% - 2rem); max-width: 420px; }
-        #sao-warning { width: calc(100% - 2rem); max-width: 480px; border-color: var(--ember-red); box-shadow: 0 20px 40px rgba(255,51,0,0.2), inset 0 0 20px rgba(255,51,0,0.15); display: none; z-index: 100; }
-        #sao-warning .sao-header { background: rgba(255, 51, 0, 0.2); border-bottom-color: var(--ember-red); color: var(--ember-red); }
-        #sao-warning .sao-prompt { color: var(--dark-gold); text-align: center; }
-        
-        #operational-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; opacity: 0; pointer-events: none; z-index: 20; width: 90%; }
-        #operational-msg h2 { font-family: var(--font-tw); font-size: 2.2rem; letter-spacing: 12px; color: #f4d081; text-shadow: 0 0 20px rgba(244, 208, 129, 0.5); margin-bottom: 10px;}
-        #operational-msg p { font-family: var(--font-en); font-size: 1rem; letter-spacing: 10px; color: var(--dark-gold); }
-        @media (max-width: 600px) { #operational-msg h2 { font-size: 1.5rem; letter-spacing: 8px; } }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="description" content="西方奇幻小說 AI 編修系統的禁忌魔導書庫登入體驗。" />
+  <title>禁忌魔導書庫｜西方奇幻小說 AI 編修系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Noto+Serif+TC:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --black: #020101;
+      --obsidian: #070403;
+      --obsidian-2: #100805;
+      --iron: #1a120c;
+      --bronze: #7d4a16;
+      --gold: #d6a64d;
+      --gold-hot: #ffe2a0;
+      --amber: #f39a22;
+      --ember: #b94b19;
+      --deep-red: #55120d;
+      --ash: #8c806f;
+      --parchment: #f1dec2;
+      --muted: #b99d78;
+      --line: rgba(214, 166, 77, 0.28);
+      --line-soft: rgba(214, 166, 77, 0.14);
+      --panel: rgba(9, 5, 2, 0.62);
+      --panel-strong: rgba(15, 8, 3, 0.82);
+      --font-tw: "Noto Sans TC", system-ui, sans-serif;
+      --font-serif: "Noto Serif TC", "Cinzel", serif;
+      --font-en: "Cinzel", serif;
+      --font-mono: "Share Tech Mono", ui-monospace, monospace;
+      --edge: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
-            }
-        }
-    </script>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--black);
+      color: var(--parchment);
+      font-family: var(--font-tw);
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    body {
+      isolation: isolate;
+      cursor: crosshair;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    #webgl-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background:
+        radial-gradient(circle at 48% 48%, rgba(115, 46, 8, 0.14), transparent 34%),
+        linear-gradient(135deg, #020101 0%, #100603 54%, #020101 100%);
+    }
+
+    #webgl-container canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .atmosphere {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 48% 50%, transparent 0 26%, rgba(0, 0, 0, 0.15) 46%, rgba(0, 0, 0, 0.86) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 18%, transparent 68%, rgba(0, 0, 0, 0.72));
+      opacity: 0.96;
+    }
+
+    .atmosphere::before {
+      content: "";
+      position: absolute;
+      inset: -10%;
+      background:
+        repeating-linear-gradient(0deg, rgba(255, 230, 162, 0.028) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(90deg, transparent 0 46px, rgba(214, 166, 77, 0.022) 47px, transparent 48px);
+      mix-blend-mode: screen;
+      opacity: 0.36;
+      animation: scanDrift 8s linear infinite;
+    }
+
+    .atmosphere::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(214, 166, 77, 0.08), transparent 32%),
+        radial-gradient(ellipse at 18% 18%, rgba(118, 44, 13, 0.18), transparent 34%),
+        radial-gradient(ellipse at 84% 75%, rgba(80, 18, 10, 0.16), transparent 38%);
+      filter: blur(12px);
+      opacity: 0.56;
+      animation: fogBreath 11s ease-in-out infinite alternate;
+    }
+
+    .boot-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 18;
+      pointer-events: none;
+      background: #000;
+      opacity: 1;
+    }
+
+    .leyline-rain {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0;
+      overflow: hidden;
+      mix-blend-mode: screen;
+      mask-image: radial-gradient(ellipse at 50% 50%, transparent 0 26%, #000 48%, #000 100%);
+    }
+
+    .leyline-rain::before,
+    .leyline-rain::after {
+      content: "LORE MATRIX  ᚠ  WORLD INDEX  ᚱ  REVISION ENGINE  ᚦ  ABYSS ARCHIVE  ᚨ  CHARACTER INDEX";
+      position: absolute;
+      top: -20%;
+      bottom: -20%;
+      width: 46%;
+      color: rgba(214, 166, 77, 0.18);
+      font: 11px/2 var(--font-mono);
+      letter-spacing: 0.22em;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      white-space: pre-wrap;
+      animation: leylineFall 18s linear infinite;
+      text-shadow: 0 0 12px rgba(214, 166, 77, 0.16);
+    }
+
+    .leyline-rain::before {
+      left: 3%;
+    }
+
+    .leyline-rain::after {
+      right: 3%;
+      animation-duration: 24s;
+      animation-direction: reverse;
+      opacity: 0.72;
+    }
+
+    .connection-window {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 14;
+      width: min(420px, calc(100vw - 38px));
+      min-height: 138px;
+      transform: translate(-50%, -50%) scaleX(0) scaleY(0.02);
+      transform-origin: center center;
+      pointer-events: none;
+      opacity: 0;
+      overflow: hidden;
+      clip-path: var(--edge);
+      border: 1px solid rgba(214, 166, 77, 0.66);
+      background:
+        linear-gradient(180deg, rgba(18, 9, 3, 0.78), rgba(3, 2, 1, 0.62)),
+        repeating-linear-gradient(0deg, rgba(255, 226, 160, 0.025) 0 1px, transparent 1px 7px);
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.86),
+        0 0 42px rgba(214, 166, 77, 0.16),
+        inset 0 0 32px rgba(214, 166, 77, 0.08);
+      backdrop-filter: blur(10px) saturate(1.14);
+      -webkit-backdrop-filter: blur(10px) saturate(1.14);
+    }
+
+    .connection-window::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(105deg, transparent 0 32%, rgba(255, 226, 160, 0.16), transparent 68%);
+      transform: translateX(-120%);
+      animation: sweep 2.4s ease-in-out infinite;
+    }
+
+    .connection-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 15px;
+      border-bottom: 1px solid rgba(214, 166, 77, 0.22);
+      color: rgba(243, 154, 34, 0.86);
+      font: 11px/1.3 var(--font-mono);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .connection-body {
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .connection-body b {
+      color: var(--gold-hot);
+      font-family: var(--font-serif);
+      font-size: 20px;
+      letter-spacing: 0.16em;
+    }
+
+    .connection-body span {
+      color: rgba(241, 222, 194, 0.7);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    .interface {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      padding: clamp(14px, 2.3vw, 30px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) minmax(320px, 430px);
+      gap: clamp(12px, 1.6vw, 22px);
+      transform-style: preserve-3d;
+    }
+
+    .top-hud,
+    .bottom-hud {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      gap: 20px;
+      opacity: 0;
+    }
+
+    .top-hud {
+      grid-row: 1;
+      transform: translateY(-18px);
+    }
+
+    .bottom-hud {
+      grid-row: 3;
+      align-items: end;
+      transform: translateY(18px);
+    }
+
+    .brand-block {
+      justify-self: center;
+      text-align: center;
+      min-width: min(540px, 72vw);
+    }
+
+    .brand-block h1 {
+      margin: 0;
+      font-family: var(--font-en);
+      font-size: clamp(20px, 2.45vw, 36px);
+      letter-spacing: 0.24em;
+      color: var(--gold-hot);
+      text-shadow: 0 0 22px rgba(214, 166, 77, 0.32);
+      line-height: 1.1;
+    }
+
+    .brand-block p {
+      margin: 8px 0 0;
+      color: rgba(241, 222, 194, 0.76);
+      font-family: var(--font-serif);
+      font-size: clamp(12px, 1.1vw, 15px);
+      letter-spacing: 0.24em;
+    }
+
+    .hud-code {
+      position: relative;
+      min-height: 56px;
+      padding: 10px 13px;
+      border-top: 1px solid var(--line);
+      color: rgba(214, 166, 77, 0.72);
+      font-family: var(--font-mono);
+      font-size: clamp(9px, 0.75vw, 11px);
+      letter-spacing: 0.16em;
+      line-height: 1.65;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, rgba(214, 166, 77, 0.05), transparent 68%);
+      clip-path: var(--edge);
+    }
+
+    .hud-code.right {
+      justify-self: end;
+      text-align: right;
+      background: linear-gradient(270deg, rgba(214, 166, 77, 0.05), transparent 68%);
+    }
+
+    .hud-code::before,
+    .hud-code::after {
+      content: "";
+      position: absolute;
+      height: 1px;
+      width: 46px;
+      background: linear-gradient(90deg, var(--gold-hot), transparent);
+      opacity: 0.5;
+      animation: lineProbe 3.4s ease-in-out infinite;
+    }
+
+    .hud-code::before {
+      left: 0;
+      top: 0;
+    }
+
+    .hud-code::after {
+      right: 0;
+      bottom: 0;
+      transform: rotate(180deg);
+      animation-delay: -1.7s;
+    }
+
+    .side-hud,
+    .left-hud,
+    .right-hud,
+    .ritual-stack,
+    .operational-deck {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    .side-hud {
+      grid-row: 2;
+      align-self: center;
+      display: grid;
+      gap: 12px;
+      max-height: min(72vh, 780px);
+      transform-origin: center center;
+      transform-style: preserve-3d;
+    }
+
+    .left-hud {
+      grid-column: 1;
+      justify-self: start;
+    }
+
+    .right-hud {
+      grid-column: 3;
+      justify-self: end;
+    }
+
+    .hud-panel,
+    .auth-panel,
+    .seal-panel,
+    .operational-deck,
+    .override-window {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(18, 9, 3, 0.68), rgba(3, 2, 1, 0.46)),
+        repeating-linear-gradient(0deg, rgba(255, 225, 160, 0.024) 0 1px, transparent 1px 8px);
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.48),
+        inset 0 0 42px rgba(214, 166, 77, 0.045);
+      clip-path: var(--edge);
+      backdrop-filter: blur(12px) saturate(1.08);
+      -webkit-backdrop-filter: blur(12px) saturate(1.08);
+    }
+
+    .hud-panel {
+      padding: 12px;
+      min-height: 116px;
+    }
+
+    .hud-panel::before,
+    .auth-panel::before,
+    .seal-panel::before,
+    .operational-deck::before,
+    .override-window::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(105deg, transparent 0 34%, rgba(255, 226, 160, 0.09), transparent 64% 100%);
+      transform: translateX(-120%);
+      opacity: 0.78;
+      animation: sweep 6.6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .hud-panel:nth-child(2)::before {
+      animation-delay: -2s;
+    }
+
+    .hud-panel:nth-child(3)::before {
+      animation-delay: -4s;
+    }
+
+    .hud-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--gold-hot);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 11px;
+    }
+
+    .hud-title span:last-child {
+      color: rgba(185, 75, 25, 0.82);
+    }
+
+    .diag-row,
+    .sync-row,
+    .core-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 24px;
+      color: rgba(241, 222, 194, 0.72);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(214, 166, 77, 0.08);
+    }
+
+    .diag-row b,
+    .sync-row b,
+    .core-row b {
+      color: var(--gold);
+      font-weight: 400;
+    }
+
+    .diag-row .warn {
+      color: var(--ember);
+    }
+
+    .mini-bars,
+    .signal-bars {
+      display: grid;
+      grid-template-columns: repeat(20, 1fr);
+      align-items: end;
+      gap: 3px;
+      height: 56px;
+      margin-top: 12px;
+      padding: 8px;
+      border: 1px solid rgba(214, 166, 77, 0.12);
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.34), transparent),
+        repeating-linear-gradient(90deg, transparent 0 10px, rgba(214, 166, 77, 0.04) 11px, transparent 12px);
+    }
+
+    .mini-bars i,
+    .signal-bars i {
+      display: block;
+      min-height: 4px;
+      background: linear-gradient(180deg, var(--gold-hot), var(--amber) 42%, rgba(88, 18, 10, 0.52));
+      opacity: 0.72;
+      transform-origin: bottom;
+      animation: barPulse 1.8s ease-in-out infinite alternate;
+    }
+
+    .mini-bars i:nth-child(3n),
+    .signal-bars i:nth-child(4n) {
+      animation-delay: -0.45s;
+    }
+
+    .mini-bars i:nth-child(5n),
+    .signal-bars i:nth-child(6n) {
+      animation-delay: -1.1s;
+    }
+
+    .data-stream {
+      height: 72px;
+      overflow: hidden;
+      color: rgba(214, 166, 77, 0.54);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1.7;
+      letter-spacing: 0.12em;
+      mask-image: linear-gradient(transparent, #000 18%, #000 78%, transparent);
+    }
+
+    .data-stream .ticker {
+      display: block;
+      animation: streamFlow 7.5s linear infinite;
+      white-space: pre-line;
+    }
+
+    .ritual-stack {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      pointer-events: auto;
+      width: min(438px, calc(100vw - 36px));
+      display: grid;
+      gap: 9px;
+      transform-style: preserve-3d;
+      transform-origin: center center;
+      z-index: 12;
+    }
+
+    .auth-panel {
+      pointer-events: auto;
+      width: 100%;
+      justify-self: center;
+      padding: 0;
+      transform-style: preserve-3d;
+    }
+
+    .auth-panel.is-danger {
+      border-color: rgba(185, 75, 25, 0.66);
+      box-shadow:
+        0 26px 80px rgba(0, 0, 0, 0.66),
+        0 0 42px rgba(185, 75, 25, 0.16),
+        inset 0 0 42px rgba(185, 75, 25, 0.08);
+    }
+
+    .auth-panel.is-danger .auth-header {
+      color: #ffc09a;
+      border-bottom-color: rgba(185, 75, 25, 0.42);
+      background:
+        linear-gradient(90deg, rgba(185, 75, 25, 0.22), rgba(85, 18, 13, 0.2), transparent),
+        rgba(0, 0, 0, 0.2);
+    }
+
+    .auth-panel.is-danger .auth-body {
+      gap: 8px;
+      padding-block: 13px;
+    }
+
+    .auth-panel.is-danger .auth-body h2 {
+      font-size: clamp(20px, 1.8vw, 26px);
+    }
+
+    .auth-panel.is-danger .auth-copy {
+      font-size: 11.5px;
+      line-height: 1.48;
+    }
+
+    .auth-panel.is-danger .ritual-lines {
+      display: none;
+    }
+
+    .auth-panel.is-danger .field input {
+      min-height: 40px;
+      padding-block: 10px;
+    }
+
+    .ritual-stack.is-oauth {
+      filter: hue-rotate(150deg) saturate(0.72) blur(1.6px);
+      transition: filter 0.5s ease;
+    }
+
+    .seal-panel {
+      pointer-events: auto;
+      padding: 10px;
+      display: grid;
+      gap: 9px;
+      transform-origin: center center;
+    }
+
+    .seal-panel .external-title {
+      color: rgba(214, 166, 77, 0.72);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .auth-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(214, 166, 77, 0.24);
+      background:
+        linear-gradient(90deg, rgba(214, 166, 77, 0.15), rgba(85, 18, 13, 0.12), transparent),
+        rgba(0, 0, 0, 0.18);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--amber);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      text-transform: uppercase;
+    }
+
+    .auth-body {
+      padding: 15px 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .auth-body h2 {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: clamp(22px, 2vw, 28px);
+      letter-spacing: 0;
+      line-height: 1.22;
+      color: var(--gold-hot);
+      text-align: center;
+      text-shadow: 0 0 24px rgba(214, 166, 77, 0.32);
+      text-wrap: balance;
+    }
+
+    .auth-copy {
+      margin: 0;
+      color: rgba(241, 222, 194, 0.68);
+      font-size: 12px;
+      line-height: 1.8;
+      text-align: center;
+      letter-spacing: 0;
+      text-wrap: pretty;
+    }
+
+    .auth-step[hidden],
+    .seal-panel[hidden] {
+      display: none !important;
+    }
+
+    .field {
+      position: relative;
+      display: grid;
+      gap: 5px;
+    }
+
+    .field span {
+      color: rgba(255, 226, 160, 0.78);
+      font-size: 11px;
+      letter-spacing: 0;
+      line-height: 1.45;
+    }
+
+    .field input,
+    .operational-deck textarea {
+      width: 100%;
+      color: var(--gold-hot);
+      border: 1px solid rgba(214, 166, 77, 0.22);
+      border-bottom-color: rgba(214, 166, 77, 0.48);
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.66), rgba(18, 8, 3, 0.58)),
+        repeating-linear-gradient(0deg, rgba(255, 226, 160, 0.025) 0 1px, transparent 1px 6px);
+      outline: 0;
+      border-radius: 4px;
+      min-height: 44px;
+      padding: 12px 13px;
+      letter-spacing: 0;
+      line-height: 1.45;
+      transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, transform 0.22s ease;
+    }
+
+    .field input::placeholder,
+    .operational-deck textarea::placeholder {
+      color: rgba(185, 157, 120, 0.48);
+    }
+
+    .field::before,
+    .field::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.44;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .field::before {
+      left: -5px;
+      top: 36px;
+      width: 8px;
+      height: 8px;
+      border: 1px solid var(--gold);
+      transform: rotate(45deg);
+      background: rgba(214, 166, 77, 0.14);
+      box-shadow: 0 0 12px rgba(214, 166, 77, 0.22);
+    }
+
+    .field::after {
+      right: 12px;
+      bottom: 13px;
+      width: 18px;
+      height: 18px;
+      border: 1px dashed rgba(214, 166, 77, 0.42);
+      border-radius: 50%;
+      animation: glyphSpin 6s linear infinite;
+    }
+
+    .field:focus-within input,
+    .field input:hover {
+      border-color: rgba(255, 226, 160, 0.62);
+      box-shadow:
+        0 0 32px rgba(214, 166, 77, 0.13),
+        inset 0 0 32px rgba(214, 166, 77, 0.055);
+      background:
+        linear-gradient(180deg, rgba(10, 5, 2, 0.78), rgba(42, 18, 5, 0.48)),
+        repeating-linear-gradient(0deg, rgba(255, 226, 160, 0.034) 0 1px, transparent 1px 6px);
+      transform: translateY(-1px);
+    }
+
+    .field:focus-within::before,
+    .field:focus-within::after {
+      opacity: 1;
+      transform: rotate(225deg) scale(1.12);
+    }
+
+    .ritual-lines {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .sync-row {
+      min-height: 24px;
+      padding: 0 8px;
+      border: 1px solid rgba(214, 166, 77, 0.13);
+      background: rgba(0, 0, 0, 0.24);
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+      font-size: 8.5px;
+    }
+
+    .sync-row b {
+      color: rgba(255, 226, 160, 0.86);
+      animation: statusBlink 1.8s ease-in-out infinite;
+    }
+
+    .auth-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .other-login-btn {
+      min-height: 38px;
+      color: rgba(255, 226, 160, 0.78);
+      font-size: 12px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .ghost-btn {
+      position: relative;
+      overflow: hidden;
+      min-height: 43px;
+      border-radius: 4px;
+      border: 1px solid rgba(214, 166, 77, 0.28);
+      cursor: pointer;
+      letter-spacing: 0;
+      line-height: 1.45;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+
+    .primary-btn {
+      color: #140901;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffe2a0 0%, #d6a64d 34%, #985319 72%, #54140c 100%);
+      border-color: rgba(255, 226, 160, 0.58);
+      box-shadow:
+        0 18px 42px rgba(124, 61, 16, 0.34),
+        inset 0 1px 0 rgba(255, 246, 203, 0.5);
+    }
+
+    .secondary-btn,
+    .ghost-btn {
+      color: rgba(241, 222, 194, 0.82);
+      background:
+        linear-gradient(180deg, rgba(28, 13, 4, 0.72), rgba(0, 0, 0, 0.52)),
+        repeating-linear-gradient(90deg, rgba(214, 166, 77, 0.02) 0 1px, transparent 1px 12px);
+    }
+
+    .primary-btn::before,
+    .secondary-btn::before,
+    .ghost-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        conic-gradient(from 0deg at 50% 50%, transparent 0 18deg, rgba(255, 226, 160, 0.28) 20deg 22deg, transparent 24deg 72deg),
+        linear-gradient(110deg, transparent 0 34%, rgba(255, 255, 255, 0.22), transparent 68% 100%);
+      opacity: 0;
+      transform: scale(0.72) rotate(0deg);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    .primary-btn:hover,
+    .secondary-btn:hover,
+    .ghost-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 226, 160, 0.68);
+      box-shadow: 0 0 36px rgba(214, 166, 77, 0.16);
+      filter: brightness(1.08);
+    }
+
+    .primary-btn:hover::before,
+    .secondary-btn:hover::before,
+    .ghost-btn:hover::before {
+      opacity: 1;
+      transform: scale(1.25) rotate(18deg);
+    }
+
+    .primary-btn:active,
+    .secondary-btn:active,
+    .ghost-btn:active {
+      transform: translateY(1px) scale(0.985);
+    }
+
+    .split-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .override-window {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 17;
+      width: min(490px, calc(100vw - 34px));
+      transform: translate(-50%, -50%) scaleX(0) scaleY(0.02);
+      transform-origin: center center;
+      pointer-events: auto;
+      display: none;
+      opacity: 0;
+      padding: 0;
+      border-color: rgba(185, 75, 25, 0.74);
+      background:
+        linear-gradient(180deg, rgba(37, 8, 5, 0.86), rgba(5, 2, 1, 0.72)),
+        repeating-linear-gradient(0deg, rgba(255, 171, 112, 0.03) 0 1px, transparent 1px 7px);
+      box-shadow:
+        0 28px 90px rgba(0, 0, 0, 0.86),
+        0 0 48px rgba(185, 75, 25, 0.2),
+        inset 0 0 42px rgba(185, 75, 25, 0.1);
+    }
+
+    .override-header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #ffc09a;
+      font: 11px/1.4 var(--font-mono);
+      letter-spacing: 0.18em;
+      border-bottom: 1px solid rgba(185, 75, 25, 0.44);
+      background: linear-gradient(90deg, rgba(185, 75, 25, 0.24), transparent);
+    }
+
+    .override-body {
+      padding: 22px 22px 18px;
+      display: grid;
+      gap: 18px;
+      text-align: center;
+    }
+
+    .override-body b {
+      color: var(--gold-hot);
+      font-family: var(--font-serif);
+      font-size: clamp(20px, 2vw, 27px);
+      letter-spacing: 0.12em;
+    }
+
+    .override-body p {
+      margin: 0;
+      color: rgba(241, 222, 194, 0.72);
+      font-size: 13px;
+      line-height: 1.85;
+    }
+
+    .override-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .override-window .danger-btn {
+      color: #1a0501;
+      border-color: rgba(255, 192, 154, 0.6);
+      background: linear-gradient(135deg, #ffc09a, #b94b19 52%, #55120d);
+      box-shadow: 0 18px 40px rgba(185, 75, 25, 0.28);
+    }
+
+    .ritual-status {
+      min-height: 30px;
+      display: grid;
+      place-items: center;
+      padding: 9px 10px;
+      border: 1px solid rgba(214, 166, 77, 0.13);
+      background: rgba(0, 0, 0, 0.26);
+      color: rgba(255, 226, 160, 0.76);
+      font-size: 12px;
+      line-height: 1.7;
+      text-align: center;
+      letter-spacing: 0;
+      text-wrap: pretty;
+    }
+
+    .ritual-status.error {
+      color: #ffc09a;
+      border-color: rgba(185, 75, 25, 0.48);
+      box-shadow: inset 0 0 26px rgba(185, 75, 25, 0.1);
+    }
+
+    .operational-deck {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      align-self: center;
+      justify-self: center;
+      pointer-events: none;
+      width: min(1180px, calc(100vw - 32px));
+      padding: clamp(12px, 1.7vw, 18px);
+      display: grid;
+      grid-template-columns: minmax(180px, 260px) minmax(360px, 1fr) minmax(180px, 260px);
+      gap: clamp(10px, 1.4vw, 18px);
+      opacity: 0;
+      transform: translateY(14px) scaleX(0) scaleY(0.02);
+      transform-origin: center center;
+    }
+
+    .codex-panel {
+      position: relative;
+      overflow: hidden;
+      min-height: clamp(420px, 58vh, 690px);
+      padding: clamp(14px, 2vw, 24px);
+      border: 1px solid rgba(214, 166, 77, 0.2);
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(214, 166, 77, 0.08), transparent 38%),
+        linear-gradient(180deg, rgba(1, 1, 1, 0.86), rgba(10, 5, 2, 0.9)),
+        repeating-linear-gradient(0deg, rgba(255, 226, 160, 0.02) 0 1px, transparent 1px 26px);
+      box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.78), 0 0 34px rgba(214, 166, 77, 0.08);
+      clip-path: var(--edge);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+    }
+
+    .codex-panel::before,
+    .codex-panel::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 226, 160, 0.38), transparent);
+      opacity: 0.74;
+      pointer-events: none;
+    }
+
+    .codex-panel::before { top: 12px; }
+    .codex-panel::after { bottom: 12px; }
+
+    .codex-panel h2 {
+      margin: 0;
+      color: var(--gold-hot);
+      font-family: var(--font-serif);
+      font-size: clamp(22px, 2vw, 30px);
+      letter-spacing: 0;
+      line-height: 1.22;
+      text-align: center;
+      text-wrap: balance;
+    }
+
+    .codex-panel p {
+      margin: 0;
+      color: rgba(241, 222, 194, 0.66);
+      text-align: center;
+      line-height: 1.85;
+      font-size: 13px;
+      letter-spacing: 0;
+      text-wrap: pretty;
+    }
+
+    .operational-deck textarea {
+      min-height: 100%;
+      resize: vertical;
+      pointer-events: none;
+      line-height: 1.7;
+      font-size: clamp(15px, 1.25vw, 18px);
+      letter-spacing: 0;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.72), rgba(10, 4, 1, 0.82)),
+        repeating-linear-gradient(0deg, rgba(255, 226, 160, 0.026) 0 1px, transparent 1px 34px);
+    }
+
+    .tool-module {
+      position: relative;
+      min-height: 116px;
+      padding: 12px;
+      border: 1px solid rgba(214, 166, 77, 0.16);
+      background:
+        linear-gradient(180deg, rgba(12, 6, 2, 0.72), rgba(0, 0, 0, 0.42)),
+        repeating-linear-gradient(90deg, rgba(214, 166, 77, 0.022) 0 1px, transparent 1px 15px);
+      clip-path: var(--edge);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(var(--deploy-x, 0)) scale(0.96);
+    }
+
+    .tool-module::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(105deg, transparent 0 34%, rgba(255, 226, 160, 0.14), transparent 66%);
+      transform: translateX(-120%);
+    }
+
+    .tool-module.deploy-sweep::before {
+      animation: sweep 1.1s ease-out 1;
+    }
+
+    .tool-module h3 {
+      margin: 0 0 10px;
+      color: rgba(255, 226, 160, 0.82);
+      font: 11px/1.4 var(--font-mono);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .tool-module p {
+      margin: 0;
+      color: rgba(241, 222, 194, 0.58);
+      font-size: 12px;
+      line-height: 1.8;
+      letter-spacing: 0;
+      text-wrap: pretty;
+    }
+
+    .tool-stack {
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+
+    .tool-stack.left .tool-module {
+      --deploy-x: -44px;
+    }
+
+    .tool-stack.right .tool-module {
+      --deploy-x: 44px;
+    }
+
+    .operational-actions {
+      display: grid;
+      grid-template-columns: minmax(180px, 320px);
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .operational-actions button {
+      min-height: 42px;
+      font-size: 12px;
+      letter-spacing: 0;
+      pointer-events: none;
+    }
+
+    .core-readout {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bottom-strip {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      width: 100%;
+    }
+
+    .status-meter {
+      position: relative;
+      min-height: 44px;
+      padding: 8px 10px;
+      border: 1px solid rgba(214, 166, 77, 0.17);
+      background: rgba(0, 0, 0, 0.26);
+      clip-path: var(--edge);
+      overflow: hidden;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: rgba(241, 222, 194, 0.62);
+    }
+
+    .status-meter b {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--gold);
+      font-weight: 400;
+    }
+
+    .meter-bar {
+      height: 5px;
+      border: 1px solid rgba(214, 166, 77, 0.18);
+      background: rgba(0, 0, 0, 0.48);
+      overflow: hidden;
+    }
+
+    .meter-bar span {
+      display: block;
+      height: 100%;
+      width: var(--value, 42%);
+      background: linear-gradient(90deg, var(--deep-red), var(--ember), var(--gold), var(--gold-hot));
+      box-shadow: 0 0 16px rgba(214, 166, 77, 0.34);
+      transform-origin: left center;
+      animation: meterBreath 2.8s ease-in-out infinite;
+    }
+
+    .encrypted-scroll {
+      grid-column: 1 / -1;
+      overflow: hidden;
+      white-space: nowrap;
+      border-top: 1px solid rgba(214, 166, 77, 0.18);
+      padding-top: 8px;
+      color: rgba(214, 166, 77, 0.52);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .encrypted-scroll span {
+      display: inline-block;
+      min-width: 100%;
+      animation: crawl 26s linear infinite;
+    }
+
+    .corner-hud {
+      position: fixed;
+      z-index: 6;
+      width: clamp(88px, 10vw, 150px);
+      height: clamp(78px, 8vw, 128px);
+      pointer-events: none;
+      opacity: 0;
+      color: rgba(214, 166, 77, 0.58);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .corner-hud.tl { left: 12px; top: 12px; }
+    .corner-hud.tr { right: 12px; top: 12px; transform: scaleX(-1); }
+    .corner-hud.bl { left: 12px; bottom: 12px; transform: scaleY(-1); }
+    .corner-hud.br { right: 12px; bottom: 12px; transform: scale(-1); }
+
+    .corner-hud::before,
+    .corner-hud::after {
+      content: "";
+      position: absolute;
+      border-color: rgba(214, 166, 77, 0.48);
+      border-style: solid;
+    }
+
+    .corner-hud::before {
+      left: 0;
+      top: 0;
+      width: 72%;
+      height: 1px;
+      border-width: 1px 0 0;
+      box-shadow: 0 0 12px rgba(214, 166, 77, 0.22);
+    }
+
+    .corner-hud::after {
+      left: 0;
+      top: 0;
+      width: 1px;
+      height: 72%;
+      border-width: 0 0 0 1px;
+      box-shadow: 0 0 12px rgba(214, 166, 77, 0.22);
+    }
+
+    .corner-node {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      width: 42px;
+      aspect-ratio: 1;
+      border: 1px dashed rgba(214, 166, 77, 0.38);
+      border-radius: 50%;
+      background:
+        conic-gradient(from 0deg, transparent 0 22deg, rgba(214, 166, 77, 0.34) 23deg 25deg, transparent 26deg 82deg),
+        radial-gradient(circle, rgba(214, 166, 77, 0.14), transparent 52%);
+      animation: glyphSpin 8s linear infinite;
+    }
+
+    .corner-node::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(255, 226, 160, 0.28);
+      transform: rotate(45deg);
+      animation: counterSpin 5.4s linear infinite;
+    }
+
+    .corner-lines {
+      position: absolute;
+      left: 72px;
+      top: 22px;
+      width: 54px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .corner-lines i {
+      display: block;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255, 226, 160, 0.62), transparent);
+      transform-origin: left center;
+      animation: cornerSignal 1.6s ease-in-out infinite alternate;
+    }
+
+    .corner-lines i:nth-child(2) { width: 72%; animation-delay: -0.5s; }
+    .corner-lines i:nth-child(3) { width: 46%; animation-delay: -1s; }
+
+    .corner-label {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      white-space: nowrap;
+      opacity: 0.72;
+    }
+
+    .notification-stack {
+      position: fixed;
+      left: 50%;
+      bottom: clamp(76px, 10vh, 120px);
+      z-index: 8;
+      width: min(560px, calc(100vw - 32px));
+      transform: translateX(-50%);
+      pointer-events: none;
+      display: grid;
+      place-items: center;
+      gap: 8px;
+    }
+
+    .notice {
+      min-height: 42px;
+      padding: 10px 16px;
+      border: 1px solid rgba(214, 166, 77, 0.22);
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(39, 17, 5, 0.58), rgba(0, 0, 0, 0.72)),
+        repeating-linear-gradient(0deg, rgba(255, 226, 160, 0.02) 0 1px, transparent 1px 6px);
+      color: rgba(255, 226, 160, 0.86);
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-align: center;
+      clip-path: var(--edge);
+      box-shadow: 0 18px 52px rgba(0, 0, 0, 0.58), inset 0 0 26px rgba(214, 166, 77, 0.05);
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+    }
+
+    .shockwave {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 4;
+      width: 18vmin;
+      aspect-ratio: 1;
+      border: 1px solid rgba(255, 226, 160, 0.55);
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(0.2);
+      opacity: 0;
+      pointer-events: none;
+      box-shadow:
+        0 0 42px rgba(214, 166, 77, 0.28),
+        inset 0 0 42px rgba(214, 166, 77, 0.12);
+    }
+
+    .center-caption {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 6;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      text-align: center;
+      width: min(620px, calc(100vw - 32px));
+      opacity: 0;
+    }
+
+    .center-caption b {
+      display: block;
+      margin-bottom: 10px;
+      color: rgba(255, 226, 160, 0.88);
+      font-family: var(--font-en);
+      font-size: clamp(14px, 1.2vw, 18px);
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+
+    .center-caption span {
+      color: rgba(241, 222, 194, 0.72);
+      font-family: var(--font-serif);
+      font-size: clamp(11px, 1vw, 15px);
+      letter-spacing: 0.12em;
+      text-shadow: 0 0 22px rgba(214, 166, 77, 0.28);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    body.boot-complete .top-hud,
+    body.boot-complete .bottom-hud,
+    body.boot-complete .side-hud,
+    body.boot-complete .left-hud,
+    body.boot-complete .right-hud,
+    body.boot-complete .ritual-stack,
+    body.boot-complete .corner-hud {
+      opacity: 1;
+      transform: none;
+    }
+
+    body.operational .ritual-stack {
+      pointer-events: none;
+    }
+
+    body.operational .side-hud {
+      opacity: 0.62;
+      transform: translateX(-8px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+
+    body.operational .right-hud {
+      transform: translateX(8px);
+    }
+
+    body.operational .operational-deck {
+      pointer-events: auto;
+      opacity: 1;
+      transform: none;
+    }
+
+    body.operational .operational-deck textarea,
+    body.operational .operational-actions button {
+      pointer-events: auto;
+    }
+
+    body.operational .center-caption {
+      opacity: 1;
+      transition: opacity 1.1s ease 0.2s;
+    }
+
+    body.operational .center-caption {
+      top: calc(50% - 78px);
+    }
+
+    body.operational .center-caption span {
+      display: none;
+    }
+
+    @keyframes scanDrift {
+      to { transform: translateY(18px); }
+    }
+
+    @keyframes leylineFall {
+      from { transform: translateY(-12%); }
+      to { transform: translateY(12%); }
+    }
+
+    @keyframes fogBreath {
+      0% { transform: scale(1); opacity: 0.45; }
+      100% { transform: scale(1.08); opacity: 0.8; }
+    }
+
+    @keyframes sweep {
+      0%, 34% { transform: translateX(-120%); opacity: 0; }
+      46% { opacity: 0.7; }
+      72%, 100% { transform: translateX(120%); opacity: 0; }
+    }
+
+    @keyframes lineProbe {
+      0%, 100% { width: 34px; opacity: 0.28; }
+      50% { width: 76px; opacity: 0.8; }
+    }
+
+    @keyframes barPulse {
+      from { transform: scaleY(0.28); opacity: 0.36; }
+      to { transform: scaleY(1); opacity: 0.88; }
+    }
+
+    @keyframes streamFlow {
+      from { transform: translateY(0); }
+      to { transform: translateY(-50%); }
+    }
+
+    @keyframes glyphSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes counterSpin {
+      to { transform: rotate(-315deg); }
+    }
+
+    @keyframes statusBlink {
+      0%, 100% { opacity: 0.42; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes meterBreath {
+      0%, 100% { filter: brightness(0.78); transform: scaleX(0.96); }
+      50% { filter: brightness(1.22); transform: scaleX(1); }
+    }
+
+    @keyframes crawl {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    @keyframes cornerSignal {
+      from { transform: scaleX(0.32); opacity: 0.3; }
+      to { transform: scaleX(1); opacity: 0.86; }
+    }
+
+    @media (max-width: 1100px) {
+      .interface {
+        grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) minmax(220px, 300px);
+      }
+
+      .side-hud .hud-panel:nth-child(3) {
+        display: none;
+      }
+
+      .bottom-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      body {
+        cursor: default;
+      }
+
+      .interface {
+        padding: 12px;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        gap: 10px;
+        overflow-y: auto;
+      }
+
+      .top-hud,
+      .bottom-hud {
+        grid-template-columns: 1fr;
+      }
+
+      .hud-code {
+        display: none;
+      }
+
+      .brand-block {
+        min-width: 0;
+      }
+
+      .brand-block h1 {
+        font-size: 18px;
+        letter-spacing: 0.14em;
+      }
+
+      .brand-block p {
+        font-size: 12px;
+        letter-spacing: 0.12em;
+      }
+
+      .side-hud,
+      .left-hud,
+      .right-hud {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: start;
+        grid-template-columns: 1fr 1fr;
+        max-height: none;
+      }
+
+      .right-hud {
+        display: none;
+      }
+
+      .left-hud .hud-panel {
+        min-height: 96px;
+      }
+
+      .left-hud .hud-panel:nth-child(2) {
+        display: block;
+      }
+
+      .ritual-stack,
+      .operational-deck {
+        grid-column: 1;
+        grid-row: 1 / -1;
+        justify-self: center;
+        align-self: center;
+        width: min(430px, calc(100vw - 24px));
+      }
+
+      .operational-deck {
+        grid-row: 2;
+        width: min(720px, calc(100vw - 24px));
+        grid-template-columns: 1fr;
+      }
+
+      .tool-stack {
+        display: none;
+      }
+
+      .auth-body {
+        padding: 16px;
+      }
+
+      .ritual-lines,
+      .split-actions,
+      .override-actions,
+      .operational-actions,
+      .bottom-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .corner-hud {
+        width: 78px;
+        height: 68px;
+        opacity: 0.48 !important;
+      }
+
+      .corner-label,
+      .corner-lines {
+        display: none;
+      }
+
+      .notification-stack {
+        bottom: 68px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .side-hud,
+      .left-hud,
+      .right-hud {
+        display: none;
+      }
+
+      .ritual-stack,
+      .operational-deck {
+        align-self: center;
+      }
+
+      .auth-body h2 {
+        font-size: 24px;
+      }
+
+      .field input {
+        min-height: 46px;
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .ghost-btn {
+        min-height: 48px;
+      }
+
+      .bottom-hud {
+        display: none;
+      }
+    }
+
+    @media (max-height: 740px) {
+      .interface {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .ritual-stack {
+        width: min(420px, calc(100vw - 28px));
+      }
+
+      .auth-body {
+        gap: 8px;
+        padding-block: 13px;
+      }
+
+      .auth-body h2 {
+        font-size: clamp(20px, 3.8vh, 26px);
+      }
+
+      .auth-copy {
+        line-height: 1.45;
+      }
+
+      .field input {
+        min-height: 40px;
+        padding-block: 10px;
+      }
+
+      .bottom-hud {
+        opacity: 0.72;
+      }
+    }
+
+  </style>
 </head>
-<body>
-    <div class="scanlines"></div>
-    <div id="webgl-container"></div>
-    
-    <div id="ui-layer">
-        <div id="hud-top">
-            <div class="sys-text-en">ARCHIVE COORDINATES<br>N 45.29 / W 12.08</div>
-            <div class="top-center">
-                <h1>ELDRUNE EDITORIUM</h1>
-                <p>西方奇幻小說編修引擎</p>
-            </div>
-            <div class="sys-text-en" style="text-align: right;">DIMENSIONAL SEAL<br>INTACT</div>
-        </div>
+<body class="is-booting">
+  <div id="webgl-container" aria-hidden="true"></div>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div class="leyline-rain" id="leylineRain" aria-hidden="true"></div>
+  <div class="boot-veil" id="bootVeil" aria-hidden="true"></div>
+  <div class="shockwave" id="shockwave" aria-hidden="true"></div>
+  <div class="center-caption" id="centerCaption" aria-hidden="true">
+    <b id="decryptText">MANUSCRIPT CORE STABILIZED</b>
+    <span>小說編修引擎待命中</span>
+  </div>
+  <div class="connection-window" id="connectionWindow" aria-hidden="true">
+    <div class="connection-header">
+      <span id="connectionLabel">ARCHIVE HANDSHAKE</span>
+      <span id="connectionState">確認連接</span>
+    </div>
+    <div class="connection-body">
+      <b id="connectionTitle">確認連接</b>
+      <span id="connectionCopy">正在喚醒禁忌魔導書庫</span>
+    </div>
+  </div>
 
-        <div id="sao-auth" class="sao-window">
-            <div class="sao-header"><span>[ ! ]</span><span>AUTH_REQUIRED</span></div>
-            <div class="sao-body">
-                <p class="sao-prompt">系統偵測到抄寫員印記。<br>請注入奧術密鑰以開啟編修儀式。</p>
-                <div class="sao-input-group"><input type="text" class="sao-input" placeholder="輸入作者印記..."></div>
-                <div class="sao-input-group"><input type="password" class="sao-input" placeholder="輸入奧術密鑰..."></div>
-            </div>
-            <div class="sao-footer">
-                <button class="sao-btn cancel" onclick="triggerGlitch()">✕ 拒絕</button>
-                <button class="sao-btn confirm" id="btn-initiate">◯ 執行</button>
-            </div>
-        </div>
+  <div class="override-window" id="overrideWindow" aria-hidden="true">
+    <div class="override-header">
+      <span>SYSTEM_OVERRIDE</span>
+      <span>ABYSS SEAL</span>
+    </div>
+    <div class="override-body">
+      <b>封印覆寫警告</b>
+      <p>解除禁忌封印將喚醒深淵世界觀核心。<br />確認後，書庫會接管草稿記憶並進入編修待命。</p>
+      <div class="override-actions">
+        <button class="ghost-btn" id="abortOverrideBtn" type="button">✕ 中斷</button>
+        <button class="secondary-btn danger-btn" id="forceSyncBtn" type="button">◯ 強制同步</button>
+      </div>
+    </div>
+  </div>
 
-        <div id="sao-warning" class="sao-window">
-            <div class="sao-header"><span>[ ⚠️ ]</span><span>SYSTEM_OVERRIDE</span></div>
-            <div class="sao-body">
-                <p class="sao-prompt">警告：解除禁忌封印可能導致現實認知崩壞。<br><br>即將連線至深淵世界觀核心，是否強制同步？</p>
-            </div>
-            <div class="sao-footer">
-                <button class="sao-btn cancel" id="btn-abort">✕ 中斷</button>
-                <button class="sao-btn confirm" id="btn-force-sync" style="color: var(--ember-red);">◯ 強制同步</button>
-            </div>
+  <div class="corner-hud tl" aria-hidden="true">
+    <i class="corner-node"></i>
+    <span class="corner-lines"><i></i><i></i><i></i></span>
+    <span class="corner-label">GLYPH LOCK</span>
+  </div>
+  <div class="corner-hud tr" aria-hidden="true">
+    <i class="corner-node"></i>
+    <span class="corner-lines"><i></i><i></i><i></i></span>
+    <span class="corner-label">RUNE SYNC</span>
+  </div>
+  <div class="corner-hud bl" aria-hidden="true">
+    <i class="corner-node"></i>
+    <span class="corner-lines"><i></i><i></i><i></i></span>
+    <span class="corner-label">ABYSS FEED</span>
+  </div>
+  <div class="corner-hud br" aria-hidden="true">
+    <i class="corner-node"></i>
+    <span class="corner-lines"><i></i><i></i><i></i></span>
+    <span class="corner-label">CORE FLOW</span>
+  </div>
+
+  <main class="interface" aria-label="西方奇幻小說 AI 編修系統登入介面">
+    <header class="top-hud" aria-hidden="true">
+      <div class="hud-code">ARCHIVE COORDINATES<br />N 45.291 // W 12.082<br />LORE SECTOR XIII</div>
+      <div class="brand-block">
+        <h1>ELDRUNE EDITORIUM</h1>
+        <p>西方奇幻小說 AI 編修系統</p>
+      </div>
+      <div class="hud-code right">DIMENSIONAL SEAL<br />REVISION ENGINE READY<br />ARCHIVE ID: ABYSS-09</div>
+    </header>
+
+    <section class="side-hud left-hud" aria-hidden="true">
+      <div class="hud-panel">
+        <div class="hud-title"><span>Fantasy Manuscript Diagnostics</span><span>LIVE</span></div>
+        <div class="diag-row"><span>Lore Synchronization</span><b data-readout>64%</b></div>
+        <div class="diag-row"><span>Character Index</span><b data-readout>ACTIVE</b></div>
+        <div class="diag-row"><span>Race Codex</span><b data-readout>SYNC</b></div>
+        <div class="diag-row"><span>Abyss Archive Status</span><b class="warn" data-readout>SEALED</b></div>
+        <div class="mini-bars" data-bars></div>
+      </div>
+
+      <div class="hud-panel">
+        <div class="hud-title"><span>Prose Analysis</span><span>TRACE</span></div>
+        <div class="diag-row"><span>Style Consistency</span><b data-readout>72%</b></div>
+        <div class="diag-row"><span>Plot Diagnosis</span><b data-readout>ARMED</b></div>
+        <div class="diag-row"><span>Draft Memory</span><b data-readout>BOUND</b></div>
+        <div class="signal-bars" data-bars></div>
+      </div>
+    </section>
+
+    <section class="side-hud right-hud" aria-hidden="true">
+      <div class="hud-panel">
+        <div class="hud-title"><span>Lore Matrix Stream</span><span>ENC</span></div>
+        <div class="data-stream">
+          <span class="ticker">WORLD INDEX // RUNE SYNCHRONIZATION // CHARACTER INDEX // DRAFT MEMORY //
+ABYSS ARCHIVE // MANUSCRIPT CORE // PLOT STRUCTURE SCAN // WESTERN FANTASY LEXICON //
+LORE MATRIX // RACE CODEX // MAGIC SYSTEM SCAN // REVISION ENGINE //
+WORLD INDEX // RUNE SYNCHRONIZATION // CHARACTER INDEX // DRAFT MEMORY //</span>
         </div>
-        <div></div>
+      </div>
+
+      <div class="hud-panel">
+        <div class="hud-title"><span>Magical System Scan</span><span>TRACE</span></div>
+        <div class="diag-row"><span>Glyph Lock</span><b data-readout>ARMED</b></div>
+        <div class="diag-row"><span>Revision Engine</span><b data-readout>SEALED</b></div>
+        <div class="diag-row"><span>Core Stability</span><b data-readout>0.05</b></div>
+        <div class="mini-bars" data-bars></div>
+      </div>
+    </section>
+
+    <div class="ritual-stack" id="ritualStack" aria-hidden="true">
+      <section class="auth-panel" id="authPanel" aria-labelledby="authTitle">
+        <div class="auth-header">
+          <span id="authHeaderLabel">AUTH_REQUIRED</span>
+          <span id="authHeaderState">GLYPH LOCK</span>
+        </div>
+        <form class="auth-body" id="authForm" autocomplete="on">
+          <h2 id="authTitle">封印認證</h2>
+          <p class="auth-copy" id="authPrompt">輸入識別代碼，讓禁忌書庫辨識你的抄寫員印記。</p>
+
+          <label class="field" for="authorEmail" id="emailField">
+            <span>識別代碼 Email</span>
+            <input id="authorEmail" name="authorEmail" type="email" autocomplete="username" placeholder="輸入你的 Email 識別碼" />
+          </label>
+
+          <label class="field auth-step" for="arcaneKey" id="passwordField" hidden>
+            <span>奧術密鑰</span>
+            <input id="arcaneKey" name="arcaneKey" type="password" autocomplete="current-password" placeholder="輸入奧術密鑰" />
+          </label>
+
+          <label class="field auth-step" for="scribeName" id="scribeNameField" hidden>
+            <span>作者印記</span>
+            <input id="scribeName" name="scribeName" type="text" autocomplete="nickname" placeholder="登錄作者印記（暱稱）" />
+          </label>
+
+          <label class="field auth-step" for="newArcaneKey" id="newKeyField" hidden>
+            <span>設置奧術密鑰</span>
+            <input id="newArcaneKey" name="newArcaneKey" type="password" autocomplete="new-password" placeholder="設置奧術密鑰" />
+          </label>
+
+          <label class="field auth-step" for="confirmArcaneKey" id="confirmKeyField" hidden>
+            <span>再次確認密鑰</span>
+            <input id="confirmArcaneKey" name="confirmArcaneKey" type="password" autocomplete="new-password" placeholder="再次確認密鑰" />
+          </label>
+
+          <div class="auth-actions">
+            <button class="primary-btn" id="openRitualBtn" type="submit">◯ 驗證印記</button>
+            <button class="ghost-btn other-login-btn" id="otherLoginBtn" type="button">使用其他印章</button>
+          </div>
+
+          <div class="ritual-status" id="ritualStatus" role="status" aria-live="polite">等待識別印記</div>
+        </form>
+      </section>
+
+      <section class="seal-panel" id="sealPanel" aria-label="外部印章登入" hidden>
+        <div class="external-title">EXTERNAL SEALS</div>
+        <div class="split-actions">
+          <button class="secondary-btn" id="googleSealBtn" type="button">以 Google 印章登入</button>
+          <button class="ghost-btn" id="guestScribeBtn" type="button">以訪客抄寫員身分進入</button>
+        </div>
+      </section>
     </div>
 
-    <div id="operational-msg">
-        <h2>世界觀核心已淨化</h2>
-        <p id="decrypt-text">EDITORIAL MODE ONLINE</p>
-    </div>
+    <section class="operational-deck" id="operationalDeck" aria-labelledby="operationalTitle" aria-hidden="true">
+      <div class="tool-stack left" aria-hidden="true">
+        <div class="tool-module">
+          <h3>CHARACTER INDEX</h3>
+          <p>追蹤角色動機、語氣與行為邏輯，避免長篇敘事中出現斷裂。</p>
+        </div>
+        <div class="tool-module">
+          <h3>RACE CODEX</h3>
+          <p>校準種族設定、神話源流與西方奇幻語彙，維持世界觀純度。</p>
+        </div>
+        <div class="tool-module">
+          <h3>PLOT DIAGNOSIS</h3>
+          <p>檢查章節節奏、衝突曲線與轉折可信度，找出劇情裂縫。</p>
+        </div>
+      </div>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+      <div class="codex-panel" id="codexPanel">
+        <h2 id="operationalTitle">黑曜石法典已待命</h2>
+        <p>世界觀核心穩定運轉。貼上草稿後，書庫會以低眩光模式解析文風、角色與世界觀脈絡。</p>
+        <div class="core-readout" aria-hidden="true">
+          <div class="core-row"><span>世界觀同步</span><b>完成</b></div>
+          <div class="core-row"><span>深淵法典</span><b>已連線</b></div>
+          <div class="core-row"><span>草稿記憶</span><b>已同步</b></div>
+        </div>
+        <textarea id="draftField" placeholder="貼上需要校準的小說草稿"></textarea>
+        <div class="operational-actions">
+          <button class="secondary-btn" type="button" data-op="analyze">開始分析</button>
+        </div>
+        <div class="ritual-status" id="operationalStatus" role="status" aria-live="polite">書庫待命，準備解析草稿</div>
+      </div>
 
-        /* 1. Base Setup */
-        const container = document.getElementById('webgl-container');
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.05); 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 15);
-        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
+      <div class="tool-stack right" aria-hidden="true">
+        <div class="tool-module">
+          <h3>PROSE ALCHEMY</h3>
+          <p>修整西幻語感、句式密度與敘事聲線，使文字更沉穩一致。</p>
+        </div>
+        <div class="tool-module">
+          <h3>LORE DATABASE</h3>
+          <p>同步世界觀資料庫、歷史紀錄與地名索引，維持設定記憶。</p>
+        </div>
+        <div class="tool-module">
+          <h3>REVISION ENGINE</h3>
+          <p>啟動 AI Rewrite、深淵設定檢查與長篇草稿結構分析。</p>
+        </div>
+      </div>
+    </section>
 
-        /* 2. Interactive Parallax Tracking */
-        const mouse = new THREE.Vector2(0, 0);
-        const targetMouse = new THREE.Vector2(0, 0);
-        const windowHalf = new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2);
-        
-        const onMouseMove = (e) => {
-            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            if(clientX !== undefined) {
-                targetMouse.x = (clientX - windowHalf.x) / windowHalf.x;
-                targetMouse.y = (clientY - windowHalf.y) / windowHalf.y;
-            }
-        };
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('touchmove', onMouseMove);
+    <footer class="bottom-hud" aria-hidden="true">
+      <div class="bottom-strip">
+        <div class="status-meter"><b>LORE CALIBRATION</b><div class="meter-bar"><span data-meter style="--value: 43%"></span></div></div>
+        <div class="status-meter"><b>MANUSCRIPT INTEGRITY</b><div class="meter-bar"><span data-meter style="--value: 58%"></span></div></div>
+        <div class="status-meter"><b>DIMENSIONAL STABILITY</b><div class="meter-bar"><span data-meter style="--value: 76%"></span></div></div>
+        <div class="status-meter"><b>ENERGY FLOW</b><div class="meter-bar"><span data-meter style="--value: 35%"></span></div></div>
+      </div>
+      <div class="encrypted-scroll">
+        <span>ARCHIVE STATUS // LORE MATRIX // RUNE SYNCHRONIZATION // REVISION ENGINE // WORLD INDEX // CHARACTER INDEX // ABYSS ARCHIVE // CORE STABILITY // ARCHIVE STATUS // LORE MATRIX // RUNE SYNCHRONIZATION // REVISION ENGINE // WORLD INDEX // CHARACTER INDEX // ABYSS ARCHIVE // CORE STABILITY //</span>
+      </div>
+    </footer>
+  </main>
 
-        /* 3. Advanced Post-Processing (Chromatic Aberration + Vignette) */
-        const renderScene = new RenderPass(scene, camera);
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.6, 0.5, 0.85);
-        bloomPass.threshold = 0.15;
-        
-        const CinematicShader = {
-            uniforms: { "tDiffuse": { value: null }, "amount": { value: 1.2 } },
-            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-            fragmentShader: `
-                uniform sampler2D tDiffuse; uniform float amount; varying vec2 vUv;
-                void main() {
-                    float dist = distance(vUv, vec2(0.5));
-                    vec2 offset = vec2(dist * 0.01 * amount, 0.0);
-                    float r = texture2D(tDiffuse, vUv + offset).r;
-                    float g = texture2D(tDiffuse, vUv).g;
-                    float b = texture2D(tDiffuse, vUv - offset).b;
-                    vec3 color = vec3(r,g,b);
-                    color *= smoothstep(0.8, amount * 0.3, dist); // Vignette
-                    gl_FragColor = vec4(color, 1.0);
-                }
-            `
-        };
-        const cinematicPass = new ShaderPass(CinematicShader);
-        
-        const composer = new EffectComposer(renderer);
-        composer.addPass(renderScene);
-        composer.addPass(bloomPass);
-        composer.addPass(cinematicPass);
+  <div class="notification-stack" aria-hidden="true">
+    <div class="notice" id="notice">正在建立世界觀索引</div>
+  </div>
 
-        /* 4. Shaders - CALIBRATED FOR EXPOSURE CONTROL */
-        const runeVertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-        const runeFragmentShader = `
-            uniform float uTime; uniform vec3 uColor; uniform vec3 uSyncColor; uniform float uDensity; uniform float uState; varying vec2 vUv;
-            float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
-            void main() {
-                float segment = floor(vUv.x * uDensity); float id = hash(vec2(segment, 1.0));
-                float flicker = sin(uTime * id * 5.0) * 0.5 + 0.5;
-                float shape = step(0.5, hash(vec2(segment, floor(vUv.y * 5.0))));
-                float alpha = shape * flicker * (id > 0.3 ? 1.0 : 0.0);
-                alpha *= smoothstep(0.0, 0.1, vUv.y) * smoothstep(1.0, 0.9, vUv.y);
-                vec3 finalColor = mix(uColor, uSyncColor, uState);
-                gl_FragColor = vec4(finalColor, alpha * 0.7); // Slightly lowered base alpha to prevent blowout
-            }
-        `;
+  <div class="visually-hidden" id="announcer" aria-live="polite" aria-atomic="true"></div>
 
-        const coreVertexShader = `
-            uniform float uTime; uniform float uDistortion; varying vec2 vUv; varying vec3 vNormal;
-            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; } vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; } vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); } vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-            float snoise(vec3 v) { 
-                const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0); vec3 i = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
-                vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g; vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy); vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy; i = mod289(i);
-                vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0))+i.y+vec4(0.0, i1.y, i2.y, 1.0))+i.x+vec4(0.0, i1.x, i2.x, 1.0)); float n_ = 0.142857142857; vec3 ns = n_ * D.wyz - D.xzx;
-                vec4 j = p - 49.0 * floor(p * ns.z * ns.z); vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_); vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy; vec4 h = 1.0 - abs(x) - abs(y); vec4 b0 = vec4(x.xy, y.xy); vec4 b1 = vec4(x.zw, y.zw); vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0; vec4 sh = -step(h, vec4(0.0)); vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-                vec3 p0 = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y); vec3 p2 = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w); vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3))); p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-                vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0); return 42.0 * dot(m*m*m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-            }
-            void main() { vUv = uv; vNormal = normal; float noise = snoise(position * 2.0 + uTime * 0.5) * uDistortion; vec3 newPos = position + normal * noise; gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0); }
-        `;
-        const coreFragmentShader = `
-            uniform float uTime; uniform float uIntensity; uniform float uState; varying vec2 vUv; varying vec3 vNormal;
-            void main() {
-                float fresnel = pow(clamp(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0, 1.0), 3.0);
-                
-                // Idle State (Ember/Obsidian)
-                vec3 idleBase = mix(vec3(0.02), vec3(1.0, 0.5, 0.0), fresnel * uIntensity);
-                idleBase += vec3(1.0, 0.1, 0.0) * (sin(uTime * 2.0) * 0.5 + 0.5) * (1.0-fresnel) * uIntensity * 0.6;
-                
-                // Purified State (Arcane Gold - Controlled Exposure)
-                // Reduced the extreme white to a refined, deep golden tone
-                vec3 syncBase = mix(vec3(0.02, 0.02, 0.03), vec3(0.8, 0.7, 0.3), fresnel * uIntensity);
-                syncBase += vec3(0.9, 0.8, 0.5) * (sin(uTime * 3.0) * 0.5 + 0.5) * (1.0-fresnel) * uIntensity * 0.5;
-                
-                vec3 finalColor = mix(idleBase, syncBase, uState);
-                gl_FragColor = vec4(finalColor, 1.0);
-            }
-        `;
+  <script type="module">
+    import * as THREE from "three";
+    import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+    import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+    import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+    import { SAOPass } from "three/addons/postprocessing/SAOPass.js";
+    import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+    import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
-        /* 5. Building the World */
-        const systemGroup = new THREE.Group(); scene.add(systemGroup);
-        
-        const coreMaterial = new THREE.ShaderMaterial({ 
-            vertexShader: coreVertexShader, fragmentShader: coreFragmentShader, 
-            uniforms: { uTime: { value: 0 }, uDistortion: { value: 0.1 }, uIntensity: { value: 1.0 }, uState: { value: 0.0 } } 
+    const gsap = window.gsap;
+    const prefersReducedMotion = false;
+    const mobileQuery = window.matchMedia("(max-width: 760px)");
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    const uiMotion = {
+      manifestX: 0.52,
+      manifestY: 0.78,
+      collapse: 0.62,
+      fieldReveal: 0.54,
+      retreat: 0.62,
+      deckX: 0.62,
+      deckY: 0.72
+    };
+
+    const palette = {
+      black: new THREE.Color(0x020101),
+      bronze: new THREE.Color(0x7d4a16),
+      gold: new THREE.Color(0xd6a64d),
+      hotGold: new THREE.Color(0xffe2a0),
+      ember: new THREE.Color(0xb94b19),
+      red: new THREE.Color(0x55120d)
+    };
+
+    const coreVertexShader = `
+      uniform float uTime;
+      uniform float uWake;
+      uniform float uHover;
+      uniform float uShock;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vWorld;
+
+      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec4 permute(vec4 x) { return mod289(((x * 34.0) + 10.0) * x); }
+      vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+      float snoise(vec3 v) {
+        const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+        const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+        vec3 i = floor(v + dot(v, C.yyy));
+        vec3 x0 = v - i + dot(i, C.xxx);
+        vec3 g = step(x0.yzx, x0.xyz);
+        vec3 l = 1.0 - g;
+        vec3 i1 = min(g.xyz, l.zxy);
+        vec3 i2 = max(g.xyz, l.zxy);
+        vec3 x1 = x0 - i1 + C.xxx;
+        vec3 x2 = x0 - i2 + C.yyy;
+        vec3 x3 = x0 - D.yyy;
+        i = mod289(i);
+        vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+        float n_ = 0.142857142857;
+        vec3 ns = n_ * D.wyz - D.xzx;
+        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+        vec4 x_ = floor(j * ns.z);
+        vec4 y_ = floor(j - 7.0 * x_);
+        vec4 x = x_ * ns.x + ns.yyyy;
+        vec4 y = y_ * ns.x + ns.yyyy;
+        vec4 h = 1.0 - abs(x) - abs(y);
+        vec4 b0 = vec4(x.xy, y.xy);
+        vec4 b1 = vec4(x.zw, y.zw);
+        vec4 s0 = floor(b0) * 2.0 + 1.0;
+        vec4 s1 = floor(b1) * 2.0 + 1.0;
+        vec4 sh = -step(h, vec4(0.0));
+        vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+        vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+        vec3 p0 = vec3(a0.xy, h.x);
+        vec3 p1 = vec3(a0.zw, h.y);
+        vec3 p2 = vec3(a1.xy, h.z);
+        vec3 p3 = vec3(a1.zw, h.w);
+        vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+        p0 *= norm.x;
+        p1 *= norm.y;
+        p2 *= norm.z;
+        p3 *= norm.w;
+        vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+        m = m * m;
+        return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+      }
+
+      void main() {
+        vUv = uv;
+        vNormal = normalize(normalMatrix * normal);
+        float pulse = sin(uTime * 1.4) * 0.5 + 0.5;
+        float n1 = snoise(position * 2.4 + vec3(uTime * 0.32));
+        float n2 = snoise(position * 5.8 - vec3(uTime * 0.18, 0.0, uTime * 0.24));
+        float distortion = (0.08 + uWake * 0.13 + uHover * 0.06 + uShock * 0.42) * (0.65 + pulse * 0.35);
+        vec3 newPosition = position + normal * ((n1 * 0.72 + n2 * 0.28) * distortion);
+        vWorld = (modelMatrix * vec4(newPosition, 1.0)).xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+      }
+    `;
+
+    const coreFragmentShader = `
+      uniform float uTime;
+      uniform float uWake;
+      uniform float uHover;
+      uniform float uShock;
+      uniform float uIntensity;
+      uniform float uOperational;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vWorld;
+
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+      }
+
+      void main() {
+        vec3 viewDir = normalize(cameraPosition - vWorld);
+        float fresnel = pow(1.0 - clamp(dot(normalize(vNormal), viewDir), 0.0, 1.0), 2.6);
+        float latitude = sin((vUv.y + uTime * 0.04) * 54.0);
+        float longitude = sin((vUv.x - uTime * 0.05) * 88.0);
+        float lattice = smoothstep(0.86, 1.0, abs(latitude * longitude));
+        float emberPulse = 0.5 + 0.5 * sin(uTime * 2.6 + vUv.x * 18.0);
+        float glyphNoise = hash(floor(vUv * vec2(42.0, 16.0)) + floor(uTime * 4.0));
+        float glyphSpark = step(0.92, glyphNoise) * smoothstep(0.2, 0.8, uWake);
+        vec3 obsidian = vec3(0.015, 0.010, 0.006);
+        vec3 bronze = vec3(0.45, 0.24, 0.07);
+        vec3 gold = vec3(1.0, 0.66, 0.22);
+        vec3 hot = vec3(1.0, 0.88, 0.56);
+        vec3 ember = vec3(0.8, 0.18, 0.04);
+        vec3 base = mix(obsidian, bronze, fresnel * (0.45 + uWake * 0.35));
+        base += gold * lattice * (0.14 + uWake * 0.34) * uIntensity;
+        base += ember * emberPulse * (0.08 + uWake * 0.08) * uIntensity;
+        base = mix(base, hot, glyphSpark * 0.22 + uShock * 0.22 + uOperational * 0.08);
+        base += hot * fresnel * (0.16 + uWake * 0.36 + uHover * 0.18 + uShock * 0.58) * uIntensity;
+        float alpha = 0.78 + fresnel * 0.22;
+        gl_FragColor = vec4(base, alpha);
+      }
+    `;
+
+    const runeVertexShader = `
+      varying vec2 vUv;
+      varying vec3 vWorld;
+      void main() {
+        vUv = uv;
+        vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const runeFragmentShader = `
+      uniform float uTime;
+      uniform float uDensity;
+      uniform float uSeed;
+      uniform float uWake;
+      uniform float uShock;
+      uniform float uOperational;
+      uniform vec3 uColor;
+      varying vec2 vUv;
+      varying vec3 vWorld;
+
+      float hash(vec2 p) {
+        p = fract(p * vec2(123.34, 456.21));
+        p += dot(p, p + 45.32);
+        return fract(p.x * p.y);
+      }
+
+      float runeCell(vec2 uv, float density) {
+        vec2 grid = vec2(density, 6.0);
+        vec2 id = floor(uv * grid);
+        vec2 gv = fract(uv * grid);
+        float h = hash(id + uSeed);
+        float vertical = smoothstep(0.08, 0.02, abs(gv.x - (0.2 + 0.6 * hash(id + 2.0))));
+        float horizontal = smoothstep(0.08, 0.02, abs(gv.y - (0.2 + 0.6 * hash(id + 4.0))));
+        float diagonal = smoothstep(0.045, 0.01, abs((gv.x + gv.y) - (0.65 + 0.35 * hash(id + 7.0))));
+        float notch = smoothstep(0.03, 0.0, abs(gv.x - gv.y));
+        float gate = step(0.24, h) * step(hash(id + floor(uTime * 0.72)), 0.92);
+        return clamp((vertical * 0.8 + horizontal * 0.65 + diagonal * 0.6 + notch * 0.45) * gate, 0.0, 1.0);
+      }
+
+      void main() {
+        float ringMask = smoothstep(0.02, 0.18, vUv.y) * smoothstep(0.98, 0.82, vUv.y);
+        float tickId = floor(vUv.x * uDensity);
+        float tick = step(0.88, fract(vUv.x * uDensity * (1.0 + hash(vec2(uSeed, tickId)) * 0.4)));
+        float rune = runeCell(vec2(fract(vUv.x + uTime * 0.006 * (hash(vec2(uSeed)) - 0.5)), vUv.y), uDensity * 0.42);
+        float pulse = 0.42 + 0.58 * sin(uTime * (1.2 + hash(vec2(uSeed, 2.0)) * 2.8) + tickId * 0.31);
+        float alpha = (rune * 0.72 + tick * 0.18) * ringMask * (0.16 + uWake * 0.44) * (0.42 + pulse * 0.48);
+        alpha += uShock * smoothstep(0.5, 0.0, abs(vUv.y - 0.5)) * 0.26;
+        vec3 color = mix(uColor * 0.55, vec3(1.0, 0.78, 0.36), uOperational * 0.38 + uShock * 0.45 + rune * 0.16);
+        gl_FragColor = vec4(color, alpha);
+      }
+    `;
+
+    const particleVertexShader = `
+      attribute float aSeed;
+      attribute float aSize;
+      uniform float uTime;
+      uniform float uWake;
+      uniform float uShock;
+      varying float vSeed;
+      void main() {
+        vSeed = aSeed;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        float flicker = 0.72 + 0.28 * sin(uTime * (2.0 + aSeed * 4.0) + aSeed * 20.0);
+        gl_PointSize = aSize * (90.0 / -mvPosition.z) * flicker * (0.68 + uWake * 0.4 + uShock * 0.8);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `;
+
+    const particleFragmentShader = `
+      uniform float uOperational;
+      varying float vSeed;
+      void main() {
+        vec2 p = gl_PointCoord - 0.5;
+        float d = length(p);
+        float alpha = smoothstep(0.5, 0.02, d);
+        vec3 ember = vec3(0.85, 0.24, 0.04);
+        vec3 gold = vec3(1.0, 0.68, 0.24);
+        vec3 ash = vec3(0.62, 0.50, 0.38);
+        vec3 color = mix(ember, gold, smoothstep(0.22, 0.94, fract(vSeed * 7.7)));
+        color = mix(color, ash, step(0.82, fract(vSeed * 3.1)) * 0.42);
+        color = mix(color, vec3(1.0, 0.74, 0.26), uOperational * 0.86);
+        gl_FragColor = vec4(color, alpha * (0.32 + 0.48 * fract(vSeed * 5.2)));
+      }
+    `;
+
+    const fogVertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fogFragmentShader = `
+      uniform float uTime;
+      uniform float uWake;
+      varying vec2 vUv;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(41.0, 289.0))) * 45758.5453); }
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+      }
+      void main() {
+        vec2 uv = vUv - 0.5;
+        float n = noise(vUv * 4.0 + vec2(uTime * 0.02, -uTime * 0.035));
+        n += noise(vUv * 9.0 + vec2(-uTime * 0.04, uTime * 0.02)) * 0.5;
+        float center = smoothstep(0.64, 0.08, length(uv * vec2(1.2, 0.8)));
+        vec3 color = mix(vec3(0.015, 0.011, 0.008), vec3(0.42, 0.18, 0.04), center * n);
+        float alpha = center * n * (0.08 + uWake * 0.1);
+        gl_FragColor = vec4(color, alpha);
+      }
+    `;
+
+    const cinematicShader = {
+      uniforms: {
+        tDiffuse: { value: null },
+        uTime: { value: 0 },
+        uShock: { value: 0 },
+        uResolution: { value: new THREE.Vector2(1, 1) }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uTime;
+        uniform float uShock;
+        uniform vec2 uResolution;
+        varying vec2 vUv;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+        void main() {
+          vec2 uv = vUv;
+          vec2 c = uv - 0.5;
+          float dist = length(c);
+          float shockRing = smoothstep(0.18 + uShock * 0.42, 0.16 + uShock * 0.42, dist) * smoothstep(0.12 + uShock * 0.42, 0.14 + uShock * 0.42, dist);
+          vec2 warped = uv + normalize(c + 0.0001) * (dist * dist * 0.018 + shockRing * 0.03);
+        float aberration = 0.0011 + uShock * 0.0042;
+          vec3 color;
+          color.r = texture2D(tDiffuse, warped + vec2(aberration, 0.0)).r;
+          color.g = texture2D(tDiffuse, warped).g;
+          color.b = texture2D(tDiffuse, warped - vec2(aberration, 0.0)).b;
+          float vignette = smoothstep(0.92, 0.18, dist);
+          float grain = hash(uv * uResolution.xy + uTime * 60.0) - 0.5;
+          color *= vignette;
+        color += grain * 0.018;
+          color += vec3(1.0, 0.72, 0.28) * shockRing * 0.2;
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `
+    };
+
+    class SceneManager {
+      constructor(container) {
+        this.container = container;
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x020101);
+        this.scene.fog = new THREE.FogExp2(0x030201, 0.032);
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 220);
+        this.camera.position.set(0, 0.25, mobileQuery.matches ? 13.5 : 11.2);
+        this.renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance"
         });
-        const coreMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 4), coreMaterial);
-        systemGroup.add(coreMesh);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileQuery.matches ? 1.55 : 2.15));
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 0.94;
+        container.appendChild(this.renderer.domElement);
 
-        const runeRings = []; 
-        const ringCount = window.innerWidth < 600 ? 12 : 24;
-        for (let i = 0; i < ringCount; i++) {
-            const mat = new THREE.ShaderMaterial({ 
-                vertexShader: runeVertexShader, fragmentShader: runeFragmentShader, 
-                uniforms: { 
-                    uTime: { value: 0 }, 
-                    uColor: { value: [new THREE.Color(0xb38030), new THREE.Color(0xff6600), new THREE.Color(0xff3300)][i%3] }, 
-                    uSyncColor: { value: new THREE.Color(0xf4d081) }, // Warm Arcane Gold
-                    uDensity: { value: 20.0 + Math.random() * 80.0 },
-                    uState: { value: 0.0 }
-                }, 
-                transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide 
-            });
-            const ring = new THREE.Mesh(new THREE.TorusGeometry(2.5 + (i * 0.25), 0.02 + Math.random() * 0.03, 3, 100), mat);
-            ring.rotation.set(Math.random() * 6.28, Math.random() * 6.28, 0);
-            ring.userData = { 
-                axis: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize(), 
-                speed: (Math.random() * 0.005 + 0.001) * (Math.random() > 0.5 ? 1 : -1) 
-            };
-            ring.userData.baseSpeed = ring.userData.speed; 
-            runeRings.push(ring); systemGroup.add(ring);
+        this.clock = new THREE.Clock();
+        this.mouse = new THREE.Vector2(0, 0);
+        this.targetMouse = new THREE.Vector2(0, 0);
+        this.systemRoot = new THREE.Group();
+        this.scene.add(this.systemRoot);
+
+        this.scene.add(new THREE.AmbientLight(0x4a2a10, 0.48));
+        const key = new THREE.PointLight(0xffb356, 2.4, 36, 2);
+        key.position.set(0, 0, 5);
+        this.scene.add(key);
+        const ember = new THREE.PointLight(0xb94b19, 1.6, 28, 2);
+        ember.position.set(-5, -3, 4);
+        this.scene.add(ember);
+
+        this.onPointerMove = this.onPointerMove.bind(this);
+        this.onResize = this.onResize.bind(this);
+        window.addEventListener("pointermove", this.onPointerMove, { passive: true });
+        window.addEventListener("resize", this.onResize);
+      }
+
+      onPointerMove(event) {
+        const x = (event.clientX / window.innerWidth) * 2 - 1;
+        const y = (event.clientY / window.innerHeight) * 2 - 1;
+        this.targetMouse.set(x, y);
+      }
+
+      onResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileQuery.matches ? 1.55 : 2.15));
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      updateMouse() {
+        this.mouse.lerp(this.targetMouse, 0.07);
+      }
+    }
+
+    class CameraController {
+      constructor(manager) {
+        this.manager = manager;
+        this.baseZ = mobileQuery.matches ? 13.5 : 11.2;
+      }
+
+      update(delta, operational) {
+        const { camera, mouse, systemRoot } = this.manager;
+        const damp = clamp(delta * 3.5, 0.02, 0.12);
+        const targetX = mouse.x * (mobileQuery.matches ? 0.7 : 1.2);
+        const targetY = -mouse.y * (mobileQuery.matches ? 0.5 : 0.82);
+        camera.position.x += (targetX - camera.position.x) * damp;
+        camera.position.y += (targetY + 0.15 - camera.position.y) * damp;
+        camera.position.z += ((operational ? this.baseZ - 0.9 : this.baseZ) - camera.position.z) * damp;
+        camera.lookAt(0, 0, 0);
+        systemRoot.rotation.x += ((mouse.y * 0.12) - systemRoot.rotation.x) * 0.04;
+        systemRoot.rotation.y += ((mouse.x * 0.18) - systemRoot.rotation.y) * 0.04;
+      }
+    }
+
+    class PostProcessingPipeline {
+      constructor(manager) {
+        this.manager = manager;
+        const { renderer, scene, camera } = manager;
+        this.composer = new EffectComposer(renderer);
+        this.composer.addPass(new RenderPass(scene, camera));
+
+        this.saoPass = new SAOPass(scene, camera, false, true);
+        this.saoPass.params.saoBias = 0.42;
+        this.saoPass.params.saoIntensity = 0.018;
+        this.saoPass.params.saoScale = 42;
+        this.saoPass.params.saoKernelRadius = 36;
+        this.saoPass.params.saoMinResolution = 0;
+        this.composer.addPass(this.saoPass);
+
+        this.baseBloom = 1.2;
+        this.hoverEnergy = 0;
+        this.targetHoverEnergy = 0;
+        this.shockEnergy = 0;
+        this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.baseBloom, 0.46, 0.92);
+        this.bloomPass.threshold = 0.62;
+        this.bloomPass.strength = this.baseBloom;
+        this.bloomPass.radius = 0.34;
+        this.composer.addPass(this.bloomPass);
+
+        this.cinematicPass = new ShaderPass(cinematicShader);
+        this.cinematicPass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+        this.composer.addPass(this.cinematicPass);
+        this.composer.addPass(new OutputPass());
+      }
+
+      resize() {
+        this.composer.setSize(window.innerWidth, window.innerHeight);
+        this.cinematicPass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+      }
+
+      setShock(value) {
+        this.shockEnergy = value;
+        this.cinematicPass.uniforms.uShock.value = value;
+      }
+
+      setHoverEnergy(value) {
+        this.targetHoverEnergy = value;
+      }
+
+      update(time, delta) {
+        this.cinematicPass.uniforms.uTime.value = time;
+        this.hoverEnergy += (this.targetHoverEnergy - this.hoverEnergy) * clamp(delta * 7, 0, 1);
+        const touchBloom = this.baseBloom + this.hoverEnergy * 0.6;
+        this.bloomPass.strength = touchBloom + this.shockEnergy * (4.5 - touchBloom);
+        this.bloomPass.radius = 0.34 + this.shockEnergy * 0.36;
+        this.composer.render(delta);
+      }
+    }
+
+    class CoreEngine {
+      constructor(root) {
+        this.group = new THREE.Group();
+        root.add(this.group);
+        this.wake = 0;
+        this.hover = 0;
+        this.shock = 0;
+        this.operational = 0;
+        this.fragmentData = [];
+        this.pageData = [];
+        this.createFog();
+        this.createCore();
+        this.createGeometrySystems();
+        this.createFragments();
+        this.createManuscriptOrbitals();
+      }
+
+      createFog() {
+        this.fogMaterial = new THREE.ShaderMaterial({
+          vertexShader: fogVertexShader,
+          fragmentShader: fogFragmentShader,
+          uniforms: {
+            uTime: { value: 0 },
+            uWake: { value: 0 }
+          },
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        });
+        const fog = new THREE.Mesh(new THREE.PlaneGeometry(52, 34, 1, 1), this.fogMaterial);
+        fog.position.z = -17;
+        this.group.add(fog);
+      }
+
+      createCore() {
+        this.coreMaterial = new THREE.ShaderMaterial({
+          vertexShader: coreVertexShader,
+          fragmentShader: coreFragmentShader,
+          uniforms: {
+            uTime: { value: 0 },
+            uWake: { value: 0 },
+            uHover: { value: 0 },
+            uShock: { value: 0 },
+            uIntensity: { value: 0.05 },
+            uOperational: { value: 0 }
+          },
+          transparent: true,
+          depthWrite: false
+        });
+        this.coreMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.12, mobileQuery.matches ? 4 : 5), this.coreMaterial);
+        this.coreMesh.scale.set(1.0, 1.06, 1.0);
+        this.group.add(this.coreMesh);
+
+        const edgeMaterial = new THREE.LineBasicMaterial({
+          color: 0xd6a64d,
+          transparent: true,
+          opacity: 0.32,
+          blending: THREE.AdditiveBlending
+        });
+        const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.24, 2), 16), edgeMaterial);
+        this.edgeShell = edge;
+        this.group.add(edge);
+      }
+
+      createGeometrySystems() {
+        this.geometryGroup = new THREE.Group();
+        this.group.add(this.geometryGroup);
+        const knotMaterial = new THREE.MeshBasicMaterial({
+          color: 0xc6852a,
+          transparent: true,
+          opacity: 0.24,
+          wireframe: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const knotCount = mobileQuery.matches ? 3 : 5;
+        for (let i = 0; i < knotCount; i++) {
+          const geo = new THREE.TorusKnotGeometry(1.58 + i * 0.18, 0.012 + i * 0.002, 160, 8, 2 + (i % 3), 3 + ((i + 1) % 4));
+          const mesh = new THREE.Mesh(geo, knotMaterial.clone());
+          mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+          mesh.userData.speed = (0.0014 + i * 0.0005) * (i % 2 ? -1 : 1);
+          mesh.userData.axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+          this.geometryGroup.add(mesh);
         }
 
-        const particleCount = window.innerWidth < 600 ? 500 : 1500;
-        const pGeo = new THREE.BufferGeometry();
-        const pPos = new Float32Array(particleCount * 3);
-        const pData = []; 
-        for(let i=0; i<particleCount; i++) {
-            const r = 3 + Math.random() * 12;
-            const angle = Math.random() * Math.PI * 2;
-            const y = (Math.random() - 0.5) * 8;
-            pPos[i*3] = Math.cos(angle) * r; pPos[i*3+1] = y; pPos[i*3+2] = Math.sin(angle) * r;
-            pData.push({ radius: r, angle: angle, y: y, speed: 0.002 + Math.random() * 0.005 });
+        const vertices = [];
+        const rings = 7;
+        for (let r = 0; r < rings; r++) {
+          const radius = 1.84 + r * 0.32;
+          const nodes = 18 + r * 4;
+          for (let i = 0; i < nodes; i++) {
+            const a = (i / nodes) * Math.PI * 2;
+            const b = (((i * 7) % nodes) / nodes) * Math.PI * 2;
+            vertices.push(Math.cos(a) * radius, Math.sin(a) * radius * 0.62, Math.sin(a + r) * 0.22);
+            vertices.push(Math.cos(b) * (radius + 0.08), Math.sin(b) * (radius + 0.08) * 0.62, Math.cos(b + r) * 0.22);
+          }
         }
-        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-        const pMat = new THREE.PointsMaterial({ color: 0xff8800, size: 0.05, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
-        const particleSystem = new THREE.Points(pGeo, pMat);
-        systemGroup.add(particleSystem);
+        const latticeGeo = new THREE.BufferGeometry();
+        latticeGeo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+        const latticeMat = new THREE.LineBasicMaterial({
+          color: 0xd6a64d,
+          transparent: true,
+          opacity: 0.12,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        this.lattice = new THREE.LineSegments(latticeGeo, latticeMat);
+        this.geometryGroup.add(this.lattice);
+      }
 
-        /* 6. GSAP SAO UI Logic & Effects */
-        let isSyncing = false;
-        
-        // Initial setup for GSAP transforms
-        gsap.set('.sao-window', { xPercent: -50, yPercent: -50 });
+      createFragments() {
+        this.fragmentGroup = new THREE.Group();
+        this.group.add(this.fragmentGroup);
+        const count = mobileQuery.matches ? 34 : 72;
+        const materials = [
+          new THREE.MeshStandardMaterial({ color: 0x21140a, roughness: 0.42, metalness: 0.72, emissive: 0x2b1203, emissiveIntensity: 0.14 }),
+          new THREE.MeshStandardMaterial({ color: 0x5c3713, roughness: 0.36, metalness: 0.82, emissive: 0x3a1604, emissiveIntensity: 0.16 })
+        ];
+        const geometries = [
+          new THREE.TetrahedronGeometry(0.08, 0),
+          new THREE.OctahedronGeometry(0.07, 0),
+          new THREE.BoxGeometry(0.12, 0.018, 0.05)
+        ];
+        for (let i = 0; i < count; i++) {
+          const mesh = new THREE.Mesh(geometries[i % geometries.length], materials[i % materials.length]);
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 2.1 + Math.random() * 3.8;
+          const y = (Math.random() - 0.5) * 3.2;
+          mesh.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius * 0.42);
+          mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+          const s = 0.7 + Math.random() * 1.6;
+          mesh.scale.setScalar(s);
+          mesh.userData = {
+            angle,
+            radius,
+            y,
+            speed: (0.08 + Math.random() * 0.18) * (Math.random() > 0.5 ? 1 : -1),
+            lift: Math.random() * Math.PI * 2
+          };
+          this.fragmentData.push(mesh);
+          this.fragmentGroup.add(mesh);
+        }
+      }
 
-        setTimeout(() => {
-            gsap.fromTo('#sao-auth', { scaleY: 0.02, scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.2, ease: "power2.out" });
-            gsap.to('#sao-auth', { scaleY: 1, duration: 0.3, ease: "back.out(1.2)", delay: 0.2 });
-        }, 1000);
+      createManuscriptOrbitals() {
+        this.pageGroup = new THREE.Group();
+        this.group.add(this.pageGroup);
+        const pageTexture = this.createPageTexture();
+        const material = new THREE.MeshBasicMaterial({
+          map: pageTexture,
+          transparent: true,
+          opacity: 0.34,
+          color: 0xffd28a,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const count = mobileQuery.matches ? 8 : 14;
+        for (let i = 0; i < count; i++) {
+          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.48), material.clone());
+          const angle = (i / count) * Math.PI * 2;
+          const radius = 3.05 + Math.sin(i * 2.1) * 0.28;
+          mesh.position.set(Math.cos(angle) * radius, Math.sin(angle * 1.3) * 0.9, Math.sin(angle) * 0.7);
+          mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, angle + Math.PI / 2);
+          mesh.userData = { angle, radius, speed: 0.11 + Math.random() * 0.08, yPhase: Math.random() * 10 };
+          this.pageData.push(mesh);
+          this.pageGroup.add(mesh);
+        }
+      }
 
-        window.triggerGlitch = () => { 
-            gsap.to('#sao-auth', { x: "+=10", yoyo: true, repeat: 5, duration: 0.05 }); 
-            gsap.to('#sao-auth', { borderColor: "var(--ember-red)", duration: 0.1, yoyo: true, repeat: 1 }); 
-        };
+      createPageTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 192;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "rgba(120,72,26,0.22)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(255,226,160,0.42)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(8, 8, 112, 176);
+        ctx.strokeStyle = "rgba(255,226,160,0.22)";
+        for (let y = 24; y < 164; y += 12) {
+          ctx.beginPath();
+          ctx.moveTo(18, y);
+          ctx.lineTo(110 - Math.random() * 26, y + Math.sin(y) * 1.8);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = "rgba(214,166,77,0.36)";
+        for (let i = 0; i < 8; i++) {
+          const x = 22 + Math.random() * 82;
+          const y = 28 + Math.random() * 120;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 8, y + 10);
+          ctx.lineTo(x - 6, y + 16);
+          ctx.stroke();
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        return texture;
+      }
 
-        document.getElementById('btn-initiate').addEventListener('click', () => {
-            gsap.to('#sao-auth', { filter: "blur(5px)", opacity: 0.3, scale: 0.95, duration: 0.3 });
-            const warning = document.getElementById('sao-warning'); warning.style.display = 'flex';
-            gsap.fromTo(warning, { scaleY: 0.02, scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.15, ease: "power2.out" });
-            gsap.to(warning, { scaleY: 1, duration: 0.25, ease: "back.out(1.5)", delay: 0.15 });
+      setWake(value) {
+        this.wake = value;
+        this.coreMaterial.uniforms.uWake.value = value;
+        this.fogMaterial.uniforms.uWake.value = value;
+      }
+
+      setHover(value) {
+        this.hover = value;
+      }
+
+      setShock(value) {
+        this.shock = value;
+      }
+
+      setIntensity(value) {
+        this.coreMaterial.uniforms.uIntensity.value = value;
+      }
+
+      setOperational(value) {
+        this.operational = value;
+      }
+
+      update(time, delta) {
+        const d = Math.min(delta, 0.05);
+        this.hover += ((this.hoverTarget || 0) - this.hover) * 0.08;
+        this.coreMaterial.uniforms.uTime.value = time;
+        this.coreMaterial.uniforms.uHover.value = this.hover;
+        this.coreMaterial.uniforms.uShock.value = this.shock;
+        this.coreMaterial.uniforms.uOperational.value = this.operational;
+        this.fogMaterial.uniforms.uTime.value = time;
+
+        this.coreMesh.rotation.x += d * (0.11 + this.shock * 1.4);
+        this.coreMesh.rotation.y += d * (0.16 + this.hover * 0.25 + this.shock * 1.8);
+        this.edgeShell.rotation.y -= d * (0.08 + this.shock * 1.2);
+        this.edgeShell.rotation.z += d * 0.06;
+        this.edgeShell.material.opacity = 0.18 + this.wake * 0.18 + this.shock * 0.28;
+
+        this.geometryGroup.children.forEach((mesh, index) => {
+          if (mesh.isMesh) {
+            mesh.rotateOnAxis(mesh.userData.axis, mesh.userData.speed * (1 + this.shock * 12));
+            mesh.material.opacity = 0.12 + this.wake * 0.18 + this.operational * 0.04;
+          }
+          if (mesh.isLineSegments) {
+            mesh.rotation.z += d * 0.045;
+            mesh.material.opacity = 0.08 + this.wake * 0.08 + this.shock * 0.14;
+          }
         });
 
-        document.getElementById('btn-abort').addEventListener('click', () => {
-            gsap.to('#sao-warning', { scaleY: 0.02, opacity: 0, duration: 0.2, onComplete: () => { document.getElementById('sao-warning').style.display = 'none'; }});
-            gsap.to('#sao-auth', { filter: "blur(0px)", opacity: 1, scale: 1, duration: 0.3, delay: 0.1 });
+        for (const mesh of this.fragmentData) {
+          const data = mesh.userData;
+          data.angle += data.speed * d * (0.7 + this.shock * 5.0);
+          const radius = data.radius * (1 - this.shock * 0.16);
+          mesh.position.x = Math.cos(data.angle) * radius;
+          mesh.position.z = Math.sin(data.angle) * radius * 0.46;
+          mesh.position.y = data.y + Math.sin(time * 0.8 + data.lift) * 0.12;
+          mesh.rotation.x += d * 0.48;
+          mesh.rotation.y += d * 0.38;
+        }
+
+        for (const mesh of this.pageData) {
+          const data = mesh.userData;
+          data.angle += data.speed * d * (0.72 + this.shock * 4.2);
+          const radius = data.radius * (1 - this.shock * 0.2);
+          mesh.position.x = Math.cos(data.angle) * radius;
+          mesh.position.z = Math.sin(data.angle) * 0.74;
+          mesh.position.y = Math.sin(data.angle * 1.4 + data.yPhase) * 0.9;
+          mesh.rotation.z = data.angle + Math.PI / 2;
+          mesh.rotation.y += d * 0.25;
+          mesh.material.opacity = 0.16 + this.wake * 0.22 + this.operational * 0.12;
+        }
+      }
+    }
+
+    class RuneSystem {
+      constructor(root) {
+        this.group = new THREE.Group();
+        root.add(this.group);
+        this.rings = [];
+        this.wake = 0;
+        this.shock = 0;
+        this.operational = 0;
+        this.speedScale = 1;
+        this.createRuneLayers();
+      }
+
+      createRuneLayers() {
+        const count = mobileQuery.matches ? 20 : 28;
+        for (let i = 0; i < count; i++) {
+          const radius = 1.62 + i * (mobileQuery.matches ? 0.135 : 0.16);
+          const tube = 0.0045 + (i % 5) * 0.0018;
+          const material = new THREE.ShaderMaterial({
+            vertexShader: runeVertexShader,
+            fragmentShader: runeFragmentShader,
+            uniforms: {
+              uTime: { value: 0 },
+              uDensity: { value: 32 + Math.random() * 96 },
+              uSeed: { value: Math.random() * 1000 },
+              uWake: { value: 0 },
+              uShock: { value: 0 },
+              uOperational: { value: 0 },
+              uColor: { value: [palette.bronze, palette.gold, palette.ember][i % 3].clone() }
+            },
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+          });
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 4, 192), material);
+          ring.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+          );
+          ring.userData = {
+            axis: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+            speed: (0.0016 + Math.random() * 0.0042) * (Math.random() > 0.5 ? 1 : -1),
+            phase: Math.random() * Math.PI * 2,
+            radius
+          };
+          this.rings.push(ring);
+          this.group.add(ring);
+        }
+      }
+
+      setWake(value) {
+        this.wake = value;
+      }
+
+      setShock(value) {
+        this.shock = value;
+      }
+
+      setOperational(value) {
+        this.operational = value;
+      }
+
+      setSpeedScale(value) {
+        this.speedScale = value;
+      }
+
+      update(time, delta) {
+        for (const ring of this.rings) {
+          const material = ring.material;
+          material.uniforms.uTime.value = time;
+          material.uniforms.uWake.value = this.wake;
+          material.uniforms.uShock.value = this.shock;
+          material.uniforms.uOperational.value = this.operational;
+          const speed = ring.userData.speed * this.speedScale * (1 + this.shock * 29 + this.operational * 0.5);
+          ring.rotateOnAxis(ring.userData.axis, speed * delta * 60);
+          const breathe = 1 + Math.sin(time * 0.42 + ring.userData.phase) * 0.008 + this.shock * 0.1;
+          ring.scale.setScalar(breathe);
+        }
+      }
+    }
+
+    class ParticleSystem {
+      constructor(root, manager) {
+        this.group = new THREE.Group();
+        root.add(this.group);
+        this.manager = manager;
+        this.wake = 0;
+        this.shock = 0;
+        this.operational = 0;
+        this.spiral = 0;
+        this.createParticles();
+      }
+
+      createParticles() {
+        this.count = mobileQuery.matches ? 720 : 1850;
+        const positions = new Float32Array(this.count * 3);
+        const seeds = new Float32Array(this.count);
+        const sizes = new Float32Array(this.count);
+        this.data = [];
+        for (let i = 0; i < this.count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 2.4 + Math.random() * 11.4;
+          const y = (Math.random() - 0.5) * 8.4;
+          positions[i * 3] = Math.cos(angle) * radius;
+          positions[i * 3 + 1] = y;
+          positions[i * 3 + 2] = Math.sin(angle) * radius * 0.7;
+          seeds[i] = Math.random();
+          sizes[i] = 0.06 + Math.random() * (mobileQuery.matches ? 0.09 : 0.13);
+          this.data.push({
+            angle,
+            baseRadius: radius,
+            radius,
+            y,
+            speed: 0.06 + Math.random() * 0.18,
+            drift: Math.random() * Math.PI * 2,
+            wobble: Math.random() * 0.7
+          });
+        }
+        this.geometry = new THREE.BufferGeometry();
+        this.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        this.geometry.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
+        this.geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+        this.material = new THREE.ShaderMaterial({
+          vertexShader: particleVertexShader,
+          fragmentShader: particleFragmentShader,
+          uniforms: {
+            uTime: { value: 0 },
+            uWake: { value: 0 },
+            uShock: { value: 0 },
+            uOperational: { value: 0 }
+          },
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        });
+        this.points = new THREE.Points(this.geometry, this.material);
+        this.group.add(this.points);
+      }
+
+      setWake(value) {
+        this.wake = value;
+        this.material.uniforms.uWake.value = value;
+      }
+
+      setShock(value) {
+        this.shock = value;
+        this.material.uniforms.uShock.value = value;
+      }
+
+      setOperational(value) {
+        this.operational = value;
+        this.material.uniforms.uOperational.value = value;
+      }
+
+      setSpiral(value) {
+        this.spiral = value;
+      }
+
+      update(time, delta) {
+        const positions = this.geometry.attributes.position.array;
+        const mx = this.manager.mouse.x;
+        const my = this.manager.mouse.y;
+        for (let i = 0; i < this.count; i++) {
+          const p = this.data[i];
+          const speedBoost = 1 + this.shock * 8 + this.spiral * 5;
+          p.angle += p.speed * delta * speedBoost;
+          const targetRadius = p.baseRadius * (1 - this.spiral * 0.68 - this.shock * 0.16);
+          p.radius += (targetRadius - p.radius) * (0.02 + this.spiral * 0.05);
+          const y = p.y + Math.sin(time * (0.32 + p.wobble) + p.drift) * 0.32;
+          const cursorPull = (1.0 - Math.min(p.baseRadius / 14, 1)) * (0.28 + this.shock * 0.4);
+          positions[i * 3] = Math.cos(p.angle) * p.radius + mx * cursorPull;
+          positions[i * 3 + 1] = y - my * cursorPull;
+          positions[i * 3 + 2] = Math.sin(p.angle) * p.radius * 0.72;
+        }
+        this.geometry.attributes.position.needsUpdate = true;
+        this.material.uniforms.uTime.value = time;
+      }
+    }
+
+    class HUDSystem {
+      constructor() {
+        this.notice = document.getElementById("notice");
+        this.announcer = document.getElementById("announcer");
+        this.meters = [...document.querySelectorAll("[data-meter]")];
+        this.readouts = [...document.querySelectorAll("[data-readout]")];
+        this.populateBars();
+        this.noticeMessages = [
+          "種族法典同步中",
+          "世界觀索引刻寫中",
+          "角色行為一致性檢查中",
+          "西方奇幻語彙校準中",
+          "敘事聲線分析中",
+          "深淵法典已完成巡檢"
+        ];
+        this.operationalMessages = [
+          "世界觀資料庫已同步",
+          "角色索引已載入",
+          "小說編修核心待命中",
+          "深淵法典已連線",
+          "草稿記憶已同步",
+          "可開始解析小說草稿"
+        ];
+        this.noticeIndex = 0;
+        this.lastHudTick = 0;
+      }
+
+      populateBars() {
+        document.querySelectorAll("[data-bars]").forEach((container, index) => {
+          const count = container.classList.contains("mini-bars") ? 20 : 16;
+          for (let i = 0; i < count; i++) {
+            const bar = document.createElement("i");
+            const height = 18 + Math.round(Math.abs(Math.sin(i * 1.7 + index)) * 74);
+            bar.style.height = `${height}%`;
+            bar.style.animationDelay = `${-Math.random() * 1.8}s`;
+            container.appendChild(bar);
+          }
+        });
+      }
+
+      showNotice(text) {
+        this.notice.textContent = text;
+        this.announcer.textContent = text;
+        if (!gsap) {
+          this.notice.style.opacity = "1";
+          return;
+        }
+        gsap.killTweensOf(this.notice);
+        gsap.fromTo(this.notice, { opacity: 0, y: 14, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.48, ease: "power2.out" });
+        gsap.to(this.notice, { opacity: 0, y: -12, duration: 0.72, delay: 2.45, ease: "power2.in" });
+      }
+
+      cycleOperational() {
+        this.noticeMessages = this.operationalMessages;
+        this.noticeIndex = 0;
+      }
+
+      update(time, syncProgress) {
+        if (time - this.lastHudTick < 0.45) return;
+        this.lastHudTick = time;
+        this.meters.forEach((meter, index) => {
+          const base = [46, 62, 76, 38][index] || 50;
+          const value = clamp(base + Math.sin(time * 0.7 + index) * 8 + syncProgress * 30, 18, 98);
+          meter.style.setProperty("--value", `${value.toFixed(0)}%`);
+        });
+        this.readouts.forEach((readout, index) => {
+          if (index % 3 === 0) {
+            readout.textContent = `${clamp(58 + Math.sin(time + index) * 20 + syncProgress * 20, 22, 99).toFixed(0)}%`;
+          }
+        });
+      }
+
+      startNoticeLoop() {
+        this.showNotice(this.noticeMessages[this.noticeIndex]);
+        window.setInterval(() => {
+          this.noticeIndex = (this.noticeIndex + 1) % this.noticeMessages.length;
+          this.showNotice(this.noticeMessages[this.noticeIndex]);
+        }, 3400);
+      }
+    }
+
+    class LoginController {
+      constructor(core, runes, particles, post, hud) {
+        this.core = core;
+        this.runes = runes;
+        this.particles = particles;
+        this.post = post;
+        this.hud = hud;
+        this.syncProgress = 0;
+        this.operational = false;
+        this.mode = "email";
+        this.pendingContract = null;
+        this.ritualStack = document.getElementById("ritualStack");
+        this.authPanel = document.getElementById("authPanel");
+        this.form = document.getElementById("authForm");
+        this.email = document.getElementById("authorEmail");
+        this.key = document.getElementById("arcaneKey");
+        this.scribeName = document.getElementById("scribeName");
+        this.newKey = document.getElementById("newArcaneKey");
+        this.confirmKey = document.getElementById("confirmArcaneKey");
+        this.passwordField = document.getElementById("passwordField");
+        this.scribeNameField = document.getElementById("scribeNameField");
+        this.newKeyField = document.getElementById("newKeyField");
+        this.confirmKeyField = document.getElementById("confirmKeyField");
+        this.sealPanel = document.getElementById("sealPanel");
+        this.authHeaderLabel = document.getElementById("authHeaderLabel");
+        this.authHeaderState = document.getElementById("authHeaderState");
+        this.authTitle = document.getElementById("authTitle");
+        this.authPrompt = document.getElementById("authPrompt");
+        this.openButton = document.getElementById("openRitualBtn");
+        this.otherLoginButton = document.getElementById("otherLoginBtn");
+        this.status = document.getElementById("ritualStatus");
+        this.operationalDeck = document.getElementById("operationalDeck");
+        this.operationalStatus = document.getElementById("operationalStatus");
+        this.shockwave = document.getElementById("shockwave");
+        this.bootVeil = document.getElementById("bootVeil");
+        this.leylineRain = document.getElementById("leylineRain");
+        this.connectionWindow = document.getElementById("connectionWindow");
+        this.connectionLabel = document.getElementById("connectionLabel");
+        this.connectionState = document.getElementById("connectionState");
+        this.connectionTitle = document.getElementById("connectionTitle");
+        this.connectionCopy = document.getElementById("connectionCopy");
+        this.overrideWindow = document.getElementById("overrideWindow");
+        this.decryptTarget = document.getElementById("decryptText");
+        this.bindEvents();
+      }
+
+      bindEvents() {
+        this.getAuthInputs().forEach((field) => {
+          field.addEventListener("focus", () => {
+            this.core.hoverTarget = 1;
+            this.post.setHoverEnergy(1);
+            const messageMap = new Map([
+              [this.email, "識別代碼校準中"],
+              [this.key, "奧術密鑰檢查中"],
+              [this.scribeName, "作者印記登錄中"],
+              [this.newKey, "新密鑰刻寫中"],
+              [this.confirmKey, "密鑰回聲確認中"]
+            ]);
+            const message = messageMap.get(field) || "草稿記憶同步中";
+            this.setStatus(message);
+            this.hud.showNotice(message);
+          });
+          field.addEventListener("blur", () => {
+            this.core.hoverTarget = 0;
+            this.post.setHoverEnergy(0);
+          });
+          field.addEventListener("input", () => this.handleTyping(field));
         });
 
-        // Cryptographic Text Scramble Animation
-        const decryptText = (elementId, finalString) => {
-            const el = document.getElementById(elementId);
-            const chars = '!<>-_\\/[]{}—=+*^?#_';
-            let frame = 0;
-            const update = () => {
-                let currentStr = '';
-                for(let i=0; i<finalString.length; i++) {
-                    if(frame > i * 3) { currentStr += finalString[i]; } 
-                    else { currentStr += chars[Math.floor(Math.random() * chars.length)]; }
-                }
-                el.innerText = currentStr;
-                if(frame < finalString.length * 3) { frame++; requestAnimationFrame(update); }
+        this.form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          if (this.mode === "email") {
+            this.verifyEmail();
+          } else if (this.mode === "retrieval") {
+            this.setStatus("深淵檢索尚未完成，請稍候");
+          } else {
+            this.showOverrideWarning();
+          }
+        });
+
+        document.getElementById("googleSealBtn").addEventListener("click", () => {
+          this.beginOAuthSeal();
+        });
+
+        document.getElementById("guestScribeBtn").addEventListener("click", () => {
+          this.beginGuestSeal();
+        });
+
+        this.otherLoginButton.addEventListener("click", () => this.showExternalSeals());
+
+        document.getElementById("abortOverrideBtn").addEventListener("click", () => this.abortOverride());
+        document.getElementById("forceSyncBtn").addEventListener("click", () => this.beginAuthentication("正在進入禁忌書庫"));
+
+        document.querySelectorAll("[data-op]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const map = {
+              analyze: "文風一致性分析中",
+              sync: "世界觀資料庫同步中",
+              style: "西方奇幻語彙校準中"
             };
-            update();
-        };
-
-        document.getElementById('btn-force-sync').addEventListener('click', () => {
-            isSyncing = true;
-            gsap.to('.sao-window', { scaleY: 0.02, opacity: 0, duration: 0.2, stagger: 0.05, onComplete: () => { document.querySelectorAll('.sao-window').forEach(el => el.style.display = 'none'); }});
-            
-            gsap.to(bloomPass, { strength: 4.5, radius: 1.5, threshold: 0.0, duration: 1.5, ease: "expo.in" });
-            gsap.to(cinematicPass.uniforms.amount, { value: 3.0, duration: 1.5 });
-            gsap.to(coreMaterial.uniforms.uDistortion, { value: 1.2, duration: 1.5 });
-            gsap.to(coreMaterial.uniforms.uIntensity, { value: 3.5, duration: 1.5 });
-            
-            runeRings.forEach((r, index) => { 
-                gsap.to(r.userData, { speed: r.userData.baseSpeed * 30, duration: 2, ease: "power3.in" }); 
-                gsap.to(r.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 1.5, delay: index*0.01 }); 
-            });
-
-            setTimeout(() => {
-                // Flashbang softened to a parchment/arcane glow instead of harsh pure white
-                scene.background = new THREE.Color(0xddccaa); 
-                gsap.to(scene.background, { r: 0.03, g: 0.03, b: 0.03, duration: 2.0, ease: "power2.out" }); // Return to near black
-                
-                gsap.to(coreMaterial.uniforms.uState, { value: 1.0, duration: 2.0, ease: "power2.out" });
-                runeRings.forEach(r => gsap.to(r.material.uniforms.uState, { value: 1.0, duration: 2.0 }));
-                gsap.to(pMat.color, { r: 0.9, g: 0.7, b: 0.4, duration: 2.0 }); // Soft gold particles
-
-                // Bloom strength reduced from 1.2 to 0.8 for controlled exposure
-                gsap.to(bloomPass, { strength: 0.8, radius: 0.6, duration: 2 }); 
-                gsap.to(cinematicPass.uniforms.amount, { value: 1.2, duration: 2 }); 
-                gsap.to(coreMaterial.uniforms.uDistortion, { value: 0.15, duration: 2 }); 
-                gsap.to(coreMaterial.uniforms.uIntensity, { value: 1.0, duration: 2 });
-                gsap.to(camera.position, { z: window.innerWidth < 600 ? 12 : 10, duration: 3, ease: "power3.out" });
-                
-                runeRings.forEach(r => { 
-                    gsap.to(r.userData, { speed: r.userData.baseSpeed * 1.5, duration: 2 }); 
-                    gsap.to(r.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 2, ease: "back.out(1.2)" }); 
-                });
-                
-                gsap.to(document.getElementById('operational-msg'), { opacity: 1, duration: 2, ease: "power1.inOut" });
-                
-                // Trigger Cryptographic Reveal
-                setTimeout(() => decryptText('decrypt-text', 'EDITORIAL MODE ONLINE'), 500);
-
-            }, 1800);
+            const message = map[button.dataset.op] || "小說編修核心待命中";
+            this.operationalStatus.textContent = message;
+            this.hud.showNotice(message);
+            this.triggerSmallPulse();
+          });
         });
 
-        /* 7. Animation Loop with Vortex & UI Parallax Physics */
-        const clock = new THREE.Clock();
-        function animate() {
-            requestAnimationFrame(animate); 
-            const time = clock.getElapsedTime(); 
-            coreMaterial.uniforms.uTime.value = time;
-            
-            // Mouse Interaction Smoothness
-            mouse.lerp(targetMouse, 0.08);
-            
-            // WebGL Parallax
-            systemGroup.rotation.x = mouse.y * 0.4;
-            systemGroup.rotation.y = mouse.x * 0.4;
-            camera.position.x += (mouse.x * 2.5 - camera.position.x) * 0.05;
-            camera.position.y += (-mouse.y * 2.5 - camera.position.y) * 0.05;
-            camera.lookAt(scene.position);
+        this.ritualStack.addEventListener("pointerenter", () => {
+          this.core.hoverTarget = 0.72;
+          this.post.setHoverEnergy(0.65);
+        });
+        this.ritualStack.addEventListener("pointerleave", () => {
+          this.core.hoverTarget = 0;
+          this.post.setHoverEnergy(0);
+        });
+      }
 
-            // UI HTML Parallax (Tilting the SAO Windows)
-            if(!isSyncing) {
-                gsap.set('.sao-window', { 
-                    rotationY: mouse.x * 15, // Max 15 degrees tilt
-                    rotationX: -mouse.y * 15,
-                    transformPerspective: 1000
-                });
+      handleTyping(field) {
+        const typed = this.getAuthInputs().reduce((sum, input) => sum + input.value.length, 0);
+        this.syncProgress = clamp(typed / 38, 0, 1);
+        this.runes.setOperational(this.syncProgress * 0.18);
+        this.particles.setOperational(this.syncProgress * 0.12);
+        const message = field === this.email ? "識別代碼校準中" : "草稿記憶同步中";
+        this.setStatus(message);
+      }
+
+      getAuthInputs() {
+        return [this.email, this.key, this.scribeName, this.newKey, this.confirmKey].filter(Boolean);
+      }
+
+      setStatus(text, isError = false) {
+        this.status.textContent = text;
+        this.status.classList.toggle("error", isError);
+      }
+
+      pulseError() {
+        if (!gsap) return;
+        gsap.fromTo(this.ritualStack, { x: -7 }, { x: 7, yoyo: true, repeat: 5, duration: 0.045, clearProps: "x" });
+      }
+
+      setAuthCopy({ header, state, title, prompt, button }) {
+        this.authHeaderLabel.textContent = header;
+        this.authHeaderState.textContent = state;
+        this.authTitle.textContent = title;
+        this.authPrompt.textContent = prompt;
+        this.openButton.textContent = button;
+      }
+
+      setFields(fields) {
+        [this.passwordField, this.scribeNameField, this.newKeyField, this.confirmKeyField].forEach((field) => {
+          field.hidden = true;
+        });
+        fields.forEach((field) => {
+          field.hidden = false;
+          if (gsap) {
+            gsap.fromTo(field, { opacity: 0, y: -8, height: 0 }, { opacity: 1, y: 0, height: "auto", duration: uiMotion.fieldReveal, ease: "power2.out" });
+          }
+        });
+      }
+
+      hideSealPanel() {
+        if (this.sealPanel.hidden) return;
+        if (!gsap) {
+          this.sealPanel.hidden = true;
+          return;
+        }
+        gsap.to(this.sealPanel, {
+          scaleY: 0.02,
+          opacity: 0,
+          filter: "blur(8px)",
+          duration: uiMotion.collapse,
+          ease: "power2.in",
+          onComplete: () => {
+            this.sealPanel.hidden = true;
+            gsap.set(this.sealPanel, { clearProps: "filter,opacity,scaleY" });
+          }
+        });
+      }
+
+      showExternalSeals() {
+        if (this.operational || this.mode !== "email") return;
+        this.setStatus("外部印章正在具現化");
+        this.hud.showNotice("外部印章登入已喚醒");
+        this.post.setHoverEnergy(0.2);
+
+        if (!gsap) {
+          this.authPanel.hidden = true;
+          this.sealPanel.hidden = false;
+          return;
+        }
+
+        this.sealPanel.hidden = false;
+        gsap.timeline()
+          .to(this.authPanel, {
+            scaleY: 0.02,
+            opacity: 0,
+            filter: "blur(10px) brightness(1.6)",
+            duration: uiMotion.collapse,
+            ease: "power2.in"
+          })
+          .set(this.authPanel, { display: "none", clearProps: "filter" })
+          .set(this.sealPanel, { display: "grid", opacity: 0, scaleX: 0, scaleY: 0.02, filter: "blur(8px)", transformOrigin: "center center" })
+          .to(this.sealPanel, { scaleX: 1, opacity: 1, filter: "blur(3px)", duration: uiMotion.manifestX, ease: "power2.out" })
+          .to(this.sealPanel, { scaleY: 1, filter: "blur(0px)", duration: uiMotion.manifestY, ease: "back.out(1.2)" });
+      }
+
+      scrambleElement(element, finalString, duration = 900) {
+        const chars = "!<>-_\\/[]{}=+*^?#";
+        const startedAt = performance.now();
+        return new Promise((resolve) => {
+          const reveal = (now) => {
+            const progress = clamp((now - startedAt) / duration, 0, 1);
+            const revealIndex = Math.floor(progress * (finalString.length + 1));
+            let output = "";
+            for (let i = 0; i < finalString.length; i++) {
+              output += i < revealIndex ? finalString[i] : chars[Math.floor(Math.random() * chars.length)];
             }
-
-            runeRings.forEach((ring) => { 
-                ring.material.uniforms.uTime.value = time; 
-                ring.rotateOnAxis(ring.userData.axis, ring.userData.speed); 
-            }); 
-
-            const positions = particleSystem.geometry.attributes.position.array;
-            let vortexSpeedMulti = isSyncing ? 5.0 : 1.0; 
-            for(let i=0; i<particleCount; i++) {
-                let p = pData[i];
-                p.angle -= p.speed * vortexSpeedMulti; 
-                let yOffset = Math.sin(time * 2.0 + i) * 0.2;
-                let repelX = mouse.x * 3.0;
-                let repelY = -mouse.y * 3.0;
-                positions[i*3] = Math.cos(p.angle) * p.radius + repelX;
-                positions[i*3+1] = p.y + yOffset + repelY;
-                positions[i*3+2] = Math.sin(p.angle) * p.radius;
+            element.textContent = output;
+            if (progress < 1) {
+              requestAnimationFrame(reveal);
+            } else {
+              element.textContent = finalString;
+              resolve();
             }
-            particleSystem.geometry.attributes.position.needsUpdate = true;
+          };
+          requestAnimationFrame(reveal);
+        });
+      }
 
-            composer.render();
-        } 
-        animate();
+      setConnectionText({ label = "ARCHIVE HANDSHAKE", state = "連接確認", title = "連接確認", copy = "禁忌魔導書庫喚醒中" } = {}) {
+        this.connectionLabel.textContent = label;
+        this.connectionState.textContent = state;
+        this.connectionTitle.textContent = title;
+        this.connectionCopy.textContent = copy;
+      }
 
-        window.addEventListener('resize', () => { windowHalf.set(window.innerWidth / 2, window.innerHeight / 2); camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); });
-    </script>
+      manifestWindow(target = this.connectionWindow) {
+        const tl = gsap.timeline();
+        target.setAttribute("aria-hidden", "false");
+        tl.set(target, { opacity: 0, scaleX: 0, scaleY: 0.02, filter: "blur(8px)", display: "block" })
+          .to(target, { scaleX: 1, opacity: 1, filter: "blur(3px)", duration: uiMotion.manifestX, ease: "power2.out" })
+          .to(target, { scaleY: 1, filter: "blur(0px)", duration: uiMotion.manifestY, ease: "back.out(1.2)" });
+        return tl;
+      }
+
+      collapseWindow(target = this.connectionWindow, duration = uiMotion.collapse) {
+        return gsap.timeline()
+          .to(target, {
+            scaleY: 0.02,
+            opacity: 0,
+            filter: "blur(10px) brightness(2)",
+            duration,
+            ease: "power2.in"
+          })
+          .set(target, { display: "none", clearProps: "filter" })
+          .call(() => target.setAttribute("aria-hidden", "true"));
+      }
+
+      isValidEmail(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      }
+
+      async verifyEmail() {
+        const email = this.email.value.trim();
+        if (!this.isValidEmail(email)) {
+          this.setStatus("請輸入有效的 Email 識別碼", true);
+          this.hud.showNotice("封印尚未辨識完整識別碼");
+          this.pulseError();
+          return;
+        }
+
+        this.mode = "retrieval";
+        this.setStatus("深淵印記檢索中...");
+        this.hud.showNotice("深淵印記檢索中");
+        this.email.disabled = true;
+        this.openButton.disabled = true;
+        document.getElementById("googleSealBtn").disabled = true;
+        document.getElementById("guestScribeBtn").disabled = true;
+        this.scrambleElement(this.openButton, "深淵檢索中...", 760);
+        this.core.setIntensity(1.15);
+        this.runes.setShock(0.103);
+        this.post.setHoverEnergy(0.6);
+
+        const result = await this.probeEmail(email);
+        this.runes.setShock(0);
+        this.post.setHoverEnergy(0);
+        this.core.setIntensity(0.78);
+        this.email.disabled = false;
+        this.email.readOnly = true;
+        this.openButton.disabled = false;
+
+        if (result.exists) {
+          this.showLoginState();
+        } else {
+          this.showRegistrationState();
+        }
+      }
+
+      async probeEmail(email) {
+        const normalized = email.toLowerCase();
+        const firebaseProbe = window.fetchSignInMethodsForEmail && window.firebaseAuth;
+        if (firebaseProbe) {
+          try {
+            const methods = await window.fetchSignInMethodsForEmail(window.firebaseAuth, email);
+            return { exists: methods.length > 0 };
+          } catch (error) {
+            console.warn("Worldforge Firebase probe fallback:", error);
+          }
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, 1050));
+        let saved = [];
+        try {
+          saved = JSON.parse(localStorage.getItem("worldforgeKnownEmails") || "[]");
+        } catch (error) {
+          saved = [];
+        }
+        const unknownPattern = /(new|unknown|register|signup|first|契約|未知|新)/i;
+        return { exists: saved.includes(normalized) || !unknownPattern.test(normalized) };
+      }
+
+      showLoginState() {
+        this.mode = "login";
+        this.authPanel.classList.remove("is-danger");
+        this.setAuthCopy({
+          header: "AUTH_CONFIRMED",
+          state: "GLYPH LOCK",
+          title: "抄寫員印記已確認",
+          prompt: "你的印記已被書庫承認。請注入奧術密鑰，完成最後的封印校準。",
+          button: "◯ 啟動編修儀式"
+        });
+        this.hideSealPanel();
+        this.setFields([this.passwordField]);
+        this.key.disabled = false;
+        this.key.focus();
+        this.setStatus("請注入奧術密鑰");
+        this.hud.showNotice("抄寫員印記已確認");
+      }
+
+      showRegistrationState() {
+        this.mode = "register";
+        this.authPanel.classList.add("is-danger");
+        this.setAuthCopy({
+          header: "NEW_SOUL_DETECTED",
+          state: "ABYSS WARNING",
+          title: "未知印記待締約",
+          prompt: "書庫尚未記錄此印記。若要進入核心，請締結新的作者契約。",
+          button: "◯ 締結契約"
+        });
+        this.hideSealPanel();
+        this.setFields([this.scribeNameField, this.newKeyField, this.confirmKeyField]);
+        this.scribeName.focus();
+        this.setStatus("請建立作者印記與奧術密鑰");
+        this.hud.showNotice("未知印記已觸發締約程序");
+        this.pulseError();
+      }
+
+      showOverrideWarning() {
+        if (this.mode === "login" && !this.key.value.trim()) {
+          this.setStatus("請先注入奧術密鑰", true);
+          this.pulseError();
+          return;
+        }
+        if (this.mode === "register") {
+          if (!this.scribeName.value.trim() || !this.newKey.value.trim() || !this.confirmKey.value.trim()) {
+            this.setStatus("請完成作者印記與兩次密鑰確認", true);
+            this.pulseError();
+            return;
+          }
+          if (this.newKey.value !== this.confirmKey.value) {
+            this.setStatus("兩次奧術密鑰並不一致", true);
+            this.pulseError();
+            return;
+          }
+          this.pendingContract = {
+            email: this.email.value.trim().toLowerCase(),
+            name: this.scribeName.value.trim()
+          };
+        }
+
+        this.setStatus("封印覆寫警告已開啟");
+        this.hud.showNotice("封印覆寫警告已啟動");
+        if (!gsap) {
+          this.overrideWindow.style.display = "block";
+          return;
+        }
+        gsap.to(this.ritualStack, { opacity: 0.34, scale: 0.94, filter: "blur(5px)", duration: uiMotion.retreat, ease: "power2.out" });
+        this.manifestWindow(this.overrideWindow);
+      }
+
+      abortOverride() {
+        this.setStatus(this.mode === "register" ? "契約尚未締結" : "編修儀式已中斷");
+        this.hud.showNotice("封印覆寫已中斷");
+        if (!gsap) {
+          this.overrideWindow.style.display = "none";
+          return;
+        }
+        this.collapseWindow(this.overrideWindow, uiMotion.collapse);
+        gsap.to(this.ritualStack, { opacity: 1, scale: 1, filter: "blur(0px)", duration: uiMotion.retreat, ease: "power2.out" });
+      }
+
+      beginOAuthSeal() {
+        if (this.operational || this.mode !== "email") return;
+        this.mode = "oauth";
+        this.setStatus("Google 印章通道開啟中");
+        this.hud.showNotice("異界封印通道開啟中");
+        this.ritualStack.classList.add("is-oauth");
+        this.getAuthInputs().forEach((input) => input.disabled = true);
+        this.openButton.disabled = true;
+        document.getElementById("googleSealBtn").disabled = true;
+        document.getElementById("guestScribeBtn").disabled = true;
+        this.core.setIntensity(0.36);
+        this.runes.setSpeedScale(0.24);
+        this.post.setHoverEnergy(0);
+        this.setConnectionText({
+          label: "OAUTH_GATE",
+          state: "DIMENSIONAL LINK",
+          title: "Google 印章授權中",
+          copy: "異界封印通道已開啟，魔導核心正降頻等待權杖回傳"
+        });
+        if (gsap) {
+          this.manifestWindow(this.connectionWindow);
+        } else {
+          this.connectionWindow.style.display = "block";
+        }
+        window.setTimeout(() => {
+          if (gsap) {
+            this.collapseWindow(this.connectionWindow, uiMotion.collapse);
+          }
+          this.beginAuthentication("Google 印章授權完成");
+        }, 1500);
+      }
+
+      beginGuestSeal() {
+        if (this.operational || this.mode !== "email") return;
+        this.mode = "guest";
+        this.email.value = "guest@worldforge.local";
+        this.email.readOnly = true;
+        this.setStatus("訪客抄寫員權限建立中");
+        this.hud.showNotice("訪客抄寫員權限已建立");
+        this.showOverrideWarning();
+      }
+
+      beginAuthentication(initialMessage) {
+        if (this.operational) return;
+        this.operational = true;
+        this.setStatus(initialMessage);
+        this.ritualStack.classList.remove("is-oauth");
+        this.post.setHoverEnergy(0);
+        this.runes.setSpeedScale(1);
+        this.getAuthInputs().forEach((input) => input.disabled = true);
+        this.openButton.disabled = true;
+        document.getElementById("googleSealBtn").disabled = true;
+        document.getElementById("guestScribeBtn").disabled = true;
+        this.hud.showNotice(initialMessage);
+        if (this.pendingContract?.email) {
+          try {
+            const saved = JSON.parse(localStorage.getItem("worldforgeKnownEmails") || "[]");
+            if (!saved.includes(this.pendingContract.email)) {
+              saved.push(this.pendingContract.email);
+              localStorage.setItem("worldforgeKnownEmails", JSON.stringify(saved));
+            }
+          } catch (error) {
+            console.warn("Worldforge contract memory skipped:", error);
+          }
+        }
+
+        const ritualMessages = [
+          "世界觀核心啟動中",
+          "禁忌書庫開門中",
+          "角色索引校準中",
+          "草稿記憶已同步"
+        ];
+
+        let index = 0;
+        const messageTimer = window.setInterval(() => {
+          this.setStatus(ritualMessages[index % ritualMessages.length]);
+          this.hud.showNotice(ritualMessages[index % ritualMessages.length]);
+          index += 1;
+        }, 760);
+
+        const driver = { shock: 0, spiral: 0, op: 0, intensity: 1 };
+        const timeline = gsap ? gsap.timeline({
+          onComplete: () => {
+            window.clearInterval(messageTimer);
+            this.enterOperationalMode();
+          }
+        }) : null;
+
+        if (timeline) {
+          timeline
+            .to([this.ritualStack, this.overrideWindow, this.connectionWindow], {
+              scaleY: 0.02,
+              opacity: 0,
+              filter: "blur(12px) brightness(2)",
+              duration: uiMotion.collapse,
+              stagger: 0.08,
+              ease: "power2.in"
+            }, 0)
+            .set([this.ritualStack, this.overrideWindow, this.connectionWindow], { display: "none", clearProps: "filter" }, 0.68)
+            .to(driver, {
+              shock: 1,
+              spiral: 1,
+              intensity: 3.5,
+              duration: 1.5,
+              ease: "expo.in",
+              onUpdate: () => this.applyAuthenticationEnergy(driver)
+            }, 0)
+            .fromTo(this.shockwave, { opacity: 0.72, scale: 0.18 }, { opacity: 0, scale: 10, duration: 1.35, ease: "power2.out" }, 1.8)
+            .set(this.bootVeil, { display: "block", backgroundColor: "#ddccaa", opacity: 0.62 }, 1.8)
+            .to(this.bootVeil, { backgroundColor: "#020101", opacity: 0, duration: 1.7, ease: "power2.out" }, 1.86)
+            .to(driver, {
+              shock: 0,
+              op: 1,
+              intensity: 0.82,
+              duration: 2.0,
+              ease: "power2.out",
+              onUpdate: () => this.applyAuthenticationEnergy(driver)
+            }, 1.8);
+        } else {
+          setTimeout(() => this.enterOperationalMode(), 1600);
+        }
+      }
+
+      applyAuthenticationEnergy(driver) {
+        this.core.setShock(driver.shock);
+        this.core.setIntensity(driver.intensity ?? 1);
+        this.runes.setShock(driver.shock);
+        this.particles.setShock(driver.shock);
+        this.particles.setSpiral(driver.spiral);
+        this.post.setShock(driver.shock);
+        this.core.setOperational(driver.op);
+        this.runes.setOperational(driver.op);
+        this.particles.setOperational(driver.op);
+      }
+
+      decryptText(finalString) {
+        const chars = "!<>-_\\/[]{}=+*^?#";
+        const duration = 1100;
+        const startedAt = performance.now();
+        const reveal = (now) => {
+          const progress = clamp((now - startedAt) / duration, 0, 1);
+          const revealIndex = Math.floor(progress * (finalString.length + 1));
+          let output = "";
+          for (let i = 0; i < finalString.length; i++) {
+            output += i < revealIndex ? finalString[i] : chars[Math.floor(Math.random() * chars.length)];
+          }
+          this.decryptTarget.textContent = output;
+          if (progress < 1) {
+            requestAnimationFrame(reveal);
+          } else {
+            this.decryptTarget.textContent = finalString;
+          }
+        };
+        requestAnimationFrame(reveal);
+      }
+
+      enterOperationalMode() {
+        this.ritualStack.style.display = "none";
+        this.sealPanel.hidden = true;
+        this.sealPanel.style.display = "none";
+        this.overrideWindow.style.display = "none";
+        this.connectionWindow.style.display = "none";
+        this.ritualStack.setAttribute("aria-hidden", "true");
+        this.overrideWindow.setAttribute("aria-hidden", "true");
+        this.connectionWindow.setAttribute("aria-hidden", "true");
+        this.operationalDeck.setAttribute("aria-hidden", "false");
+        document.body.classList.add("operational");
+        this.core.setShock(0);
+        this.core.setIntensity(0.82);
+        this.runes.setShock(0);
+        this.particles.setShock(0);
+        this.particles.setSpiral(0);
+        this.post.setShock(0);
+        this.core.setOperational(1);
+        this.runes.setOperational(1);
+        this.particles.setOperational(1);
+        this.hud.cycleOperational();
+        this.hud.showNotice("小說編修核心待命中");
+        this.decryptText("EDITORIAL MODE ONLINE");
+
+        if (gsap) {
+          gsap.to(this.leylineRain, { opacity: 0.42, duration: 1.2, ease: "power2.out" });
+          gsap.to(this.core.group.position, { z: -1.5, duration: 1.8, ease: "power3.out" });
+          gsap.to(this.core.group.scale, { x: 0.82, y: 0.82, z: 0.82, duration: 1.8, ease: "power3.out" });
+          gsap.to(this.runes.group.scale, { x: 0.86, y: 0.86, z: 0.86, duration: 1.8, ease: "power3.out" });
+          gsap.to(this.particles.group.scale, { x: 0.9, y: 0.9, z: 0.9, duration: 1.8, ease: "power3.out" });
+
+          const deckTl = gsap.timeline();
+          deckTl
+            .set(this.operationalDeck, { opacity: 0, scaleX: 0, scaleY: 0.02, filter: "blur(10px)" })
+            .to(this.operationalDeck, { scaleX: 1, opacity: 1, duration: uiMotion.deckX, ease: "power2.out" }, 0.45)
+            .to(this.operationalDeck, { scaleY: 1, filter: "blur(0px)", duration: uiMotion.deckY, ease: "back.out(1.1)" }, 0.9)
+            .to(".tool-module", {
+              opacity: 1,
+              x: 0,
+              scale: 1,
+              duration: 0.72,
+              stagger: 0.12,
+              ease: "power3.out",
+              onStart: () => document.querySelectorAll(".tool-module").forEach((node) => node.classList.add("deploy-sweep"))
+            }, 1.55);
+        }
+      }
+
+      triggerSmallPulse() {
+        const driver = { shock: 0 };
+        if (!gsap) return;
+        gsap.to(driver, {
+          shock: 0.32,
+          duration: 0.22,
+          ease: "power2.out",
+          onUpdate: () => {
+            this.core.setShock(driver.shock);
+            this.runes.setShock(driver.shock);
+            this.particles.setShock(driver.shock);
+            this.post.setShock(driver.shock);
+          },
+          onComplete: () => {
+            gsap.to(driver, {
+              shock: 0,
+              duration: 0.9,
+              ease: "power2.out",
+              onUpdate: () => {
+                this.core.setShock(driver.shock);
+                this.runes.setShock(driver.shock);
+                this.particles.setShock(driver.shock);
+                this.post.setShock(driver.shock);
+              }
+            });
+          }
+        });
+      }
+    }
+
+    class AnimationTimeline {
+      constructor(core, runes, particles, hud) {
+        this.core = core;
+        this.runes = runes;
+        this.particles = particles;
+        this.hud = hud;
+      }
+
+      start() {
+        const reveal = { wake: 0.05, intensity: 0.05 };
+        this.applyWake(reveal.wake);
+        this.core.setIntensity(reveal.intensity);
+        if (!gsap || prefersReducedMotion) {
+          this.core.setWake(1);
+          this.core.setIntensity(0.78);
+          this.runes.setWake(1);
+          this.particles.setWake(1);
+          document.getElementById("bootVeil").style.display = "none";
+          document.querySelectorAll(".side-hud").forEach((node) => node.style.display = "none");
+          document.getElementById("ritualStack").removeAttribute("aria-hidden");
+          document.body.classList.remove("is-booting");
+          document.body.classList.add("boot-complete");
+          this.hud.startNoticeLoop();
+          return;
+        }
+
+        gsap.set([".top-hud", ".bottom-hud", ".side-hud", ".ritual-stack", ".corner-hud"], { opacity: 0 });
+        gsap.set(".side-hud", { scaleX: 0, scaleY: 0.02, y: 0, filter: "blur(8px)", transformOrigin: "center center" });
+        gsap.set(".ritual-stack", { xPercent: -50, yPercent: -50, scaleX: 0, scaleY: 0.02, x: 0, y: 0, transformOrigin: "center center" });
+        gsap.set("#connectionWindow", { display: "none", opacity: 0, scaleX: 0, scaleY: 0.02, transformOrigin: "center center" });
+        gsap.set("#overrideWindow", { display: "none", opacity: 0, scaleX: 0, scaleY: 0.02, transformOrigin: "center center" });
+        gsap.set("#bootVeil", { opacity: 1, display: "block" });
+        const tl = gsap.timeline({
+          defaults: { ease: "power3.out" },
+          onComplete: () => {
+            document.body.classList.remove("is-booting");
+            document.body.classList.add("boot-complete");
+            this.hud.startNoticeLoop();
+          }
+        });
+        tl
+          .to(reveal, {
+            wake: 0.12,
+            intensity: 0.12,
+            duration: 1.0,
+            ease: "sine.inOut",
+            onUpdate: () => {
+              this.applyWake(reveal.wake);
+              this.core.setIntensity(reveal.intensity);
+            }
+          })
+          .to("#bootVeil", { opacity: 0.18, duration: 0.72, ease: "power2.out" }, 0.88)
+          .set(".side-hud", { display: "grid" }, 1.0)
+          .to(".side-hud", { scaleX: 1, opacity: 1, filter: "blur(4px)", duration: 0.82, stagger: 0.18, ease: "power2.out" }, 1.0)
+          .to(".side-hud", { scaleY: 1, filter: "blur(0px)", duration: 1.08, stagger: 0.18, ease: "back.out(1.15)" }, 1.82)
+          .to(reveal, {
+            wake: 0.58,
+            intensity: 0.55,
+            duration: 1.5,
+            ease: "sine.inOut",
+            onUpdate: () => {
+              this.applyWake(reveal.wake);
+              this.core.setIntensity(reveal.intensity);
+            }
+          }, 1.05)
+          .to(".side-hud", { scaleY: 0.02, opacity: 0, filter: "blur(10px) brightness(2)", duration: 0.82, stagger: 0.14, ease: "power2.in" }, 4.0)
+          .set(".side-hud", { display: "none", clearProps: "filter" }, 5.08)
+          .to(reveal, {
+            wake: 1,
+            intensity: 0.78,
+            duration: 1.1,
+            ease: "power2.out",
+            onUpdate: () => {
+              this.applyWake(reveal.wake);
+              this.core.setIntensity(reveal.intensity);
+            }
+          }, 2.28)
+          .to(".corner-hud", { opacity: 1, duration: 0.72, stagger: 0.1 }, 1.62)
+          .to(".top-hud", { opacity: 1, y: 0, duration: 0.92 }, 1.72)
+          .to(".bottom-hud", { opacity: 1, y: 0, duration: 0.92 }, 1.86)
+          .call(() => document.getElementById("ritualStack").setAttribute("aria-hidden", "false"), null, 5.22)
+          .to(".ritual-stack", { scaleX: 1, opacity: 1, xPercent: -50, yPercent: -50, y: 0, duration: uiMotion.manifestX, ease: "power2.out" }, 5.26)
+          .to(".ritual-stack", { scaleY: 1, xPercent: -50, yPercent: -50, y: 0, duration: uiMotion.manifestY, ease: "back.out(1.2)" }, 5.78)
+          .to("#bootVeil", { opacity: 0, duration: 1.15, ease: "power2.out" }, 5.3);
+      }
+
+      applyWake(value) {
+        this.core.setWake(value);
+        this.runes.setWake(value);
+        this.particles.setWake(value);
+      }
+    }
+
+    class OperationalModeController {
+      constructor(loginController, hud) {
+        this.loginController = loginController;
+        this.hud = hud;
+        this.draftField = document.getElementById("draftField");
+        this.status = document.getElementById("operationalStatus");
+        this.bindDraftMemory();
+      }
+
+      bindDraftMemory() {
+        const messages = [
+          "世界觀索引刻寫中",
+          "角色行為一致性檢查中",
+          "敘事聲線分析中",
+          "西方奇幻語彙校準中"
+        ];
+        let index = 0;
+        this.draftField.addEventListener("input", () => {
+          const message = messages[index % messages.length];
+          index += 1;
+          this.status.textContent = message;
+          this.hud.showNotice(message);
+          this.loginController.syncProgress = clamp(this.draftField.value.length / 500, 0, 1);
+        });
+      }
+    }
+
+    const manager = new SceneManager(document.getElementById("webgl-container"));
+    const cameraController = new CameraController(manager);
+    const core = new CoreEngine(manager.systemRoot);
+    const runes = new RuneSystem(manager.systemRoot);
+    const particles = new ParticleSystem(manager.systemRoot, manager);
+    const post = new PostProcessingPipeline(manager);
+    const hud = new HUDSystem();
+    const login = new LoginController(core, runes, particles, post, hud);
+    new OperationalModeController(login, hud);
+    const timeline = new AnimationTimeline(core, runes, particles, hud);
+
+    window.addEventListener("resize", () => post.resize());
+    timeline.start();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = manager.clock.getDelta();
+      const time = manager.clock.elapsedTime;
+      manager.updateMouse();
+      cameraController.update(delta, document.body.classList.contains("operational"));
+      core.update(time, delta);
+      runes.update(time, delta);
+      particles.update(time, delta);
+      hud.update(time, login.syncProgress);
+      post.update(time, delta);
+    }
+
+    animate();
+  </script>
 </body>
 </html>
