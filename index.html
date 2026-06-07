@@ -3,291 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAO Black Gold System Demo</title>
-    <!-- 引入 GSAP 動畫庫 -->
+    <title>CINEMATIC BLACK GOLD SYSTEM</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         :root {
-            --obsidian: #0D0D0D;
+            --obsidian: #050505;
+            --deep-gold: #B8860B;
             --royal-gold: #D4AF37;
-            --satin-gold: #B8860B;
-            --amber-glow: #FFD700;
-            --pearl-white: #E0E0E0;
-            --gold-gradient: linear-gradient(45deg, #B8860B, #F9A602, #B8860B);
+            --bright-gold: #FFD700;
+            --glow-gold: rgba(212, 175, 55, 0.6);
+            --glass: rgba(10, 10, 10, 0.8);
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
             background-color: var(--obsidian);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: var(--pearl-white);
+            perspective: 1000px; /* 建立 3D 空間深度 */
         }
 
-        /* 背景粒子裝飾 */
-        .bg-dust {
+        /* 電影級背景：深邃的光暈與粒子 */
+        .cinematic-bg {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: radial-gradient(circle, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
+            width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 50% 50%, #1a1a1a 0%, #050505 100%);
             z-index: -1;
         }
-
-        /* 觸發按鈕 */
-        .trigger-btn {
-            padding: 15px 40px;
-            font-size: 18px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: var(--royal-gold);
-            background: transparent;
-            border: 2px solid var(--royal-gold);
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-            z-index: 10;
-            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        .ambient-light {
+            position: absolute;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, var(--glow-gold) 0%, transparent 70%);
+            filter: blur(100px);
+            opacity: 0.15;
+            animation: float 10s infinite alternate ease-in-out;
         }
 
-        .trigger-btn:hover {
+        @keyframes float {
+            0% { transform: translate(-20%, -20%); }
+            100% { transform: translate(20%, 20%); }
+        }
+
+        /* 核心啟動鈕：設計成像一個能量核心 */
+        .core-trigger {
+            position: relative;
+            padding: 20px 60px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 5px;
+            color: var(--bright-gold);
+            background: transparent;
+            border: 1px solid var(--royal-gold);
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+        .core-trigger:hover {
             background: var(--royal-gold);
             color: var(--obsidian);
-            box-shadow: 0 0 20px var(--royal-gold);
+            box-shadow: 0 0 40px var(--glow-gold);
+            transform: scale(1.1);
         }
 
-        /* SAO 遮罩層 */
+        /* 全螢幕遮罩 */
         .overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(15px);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
             display: none;
-            z-index: 100;
+            z-index: 1000;
             justify-content: center;
             align-items: center;
         }
 
-        /* 金色爆發環 */
-        .gold-ring {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            border: 2px solid var(--amber-glow);
-            border-radius: 50%;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        /* SAO 彈窗主體 */
-        .sao-modal {
+        /* SAO 數位碎片彈窗 */
+        .sao-panel {
             position: relative;
-            width: 500px;
-            height: 350px;
-            background: rgba(20, 20, 20, 0.9);
-            border: 1px solid rgba(212, 175, 55, 0.2);
+            width: 600px;
+            height: 380px;
+            background: var(--glass);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             opacity: 0;
-            transform: scale(0.8);
-            z-index: 101;
+            transform: scale(0.5) rotateX(20deg);
+            z-index: 1001;
         }
 
-        /* L-Shape 角標 */
+        /* 電影級 L 型金屬角標 */
         .corner {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 3px solid var(--royal-gold);
-            z-index: 102;
+            width: 40px; height: 40px;
+            border: 4px solid var(--bright-gold);
+            filter: drop-shadow(0 0 5px var(--bright-gold));
         }
-        .tl { top: -5px; left: -5px; border-right: 0; border-bottom: 0; }
-        .tr { top: -5px; right: -5px; border-left: 0; border-bottom: 0; }
-        .bl { bottom: -5px; left: -5px; border-right: 0; border-top: 0; }
-        .br { bottom: -5px; right: -5px; border-left: 0; border-top: 0; }
+        .tl { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+        .tr { top: -2px; right: -2px; border-left: 0; border-bottom: 0; }
+        .bl { bottom: -2px; left: -2px; border-right: 0; border-top: 0; }
+        .br { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
 
-        /* 鎖定閃光 */
-        .lock-flash {
+        /* 掃描線效果 */
+        .scanline {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
+            width: 100%; height: 2px;
+            background: var(--bright-gold);
             opacity: 0;
-            pointer-events: none;
-            z-index: 103;
+            z-index: 1002;
+            box-shadow: 0 0 15px var(--bright-gold);
         }
 
         /* 內容文字 */
-        .content {
-            text-align: center;
-            padding: 40px;
-        }
+        .content { text-align: center; z-index: 1003; }
         .title {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            background: var(--gold-gradient);
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            background: linear-gradient(to bottom, #FFF, var(--royal-gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 900;
+            letter-spacing: 8px;
             opacity: 0;
         }
-        .description {
-            font-size: 1rem;
-            line-height: 1.6;
-            color: var(--pearl-white);
+        .status {
+            font-family: 'Courier New', monospace;
+            color: var(--bright-gold);
+            font-size: 0.9rem;
             opacity: 0;
+            letter-spacing: 2px;
         }
 
         .close-btn {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
+            bottom: 30px;
             color: var(--royal-gold);
             cursor: pointer;
             font-size: 12px;
-            text-decoration: underline;
+            letter-spacing: 3px;
             opacity: 0;
+            transition: 0.3s;
         }
-
+        .close-btn:hover { color: white; text-shadow: 0 0 10px var(--bright-gold); }
     </style>
 </head>
 <body>
 
-    <div class="bg-dust"></div>
+    <div class="cinematic-bg"></div>
+    <div class="ambient-light"></div>
     
-    <button class="trigger-btn" onclick="openSAO()">激活系統接口</button>
+    <button class="core-trigger" onclick="activateSystem()">Initiate System</button>
 
-    <!-- 彈窗構造 -->
     <div class="overlay" id="overlay">
-        <div class="gold-ring" id="goldRing"></div>
+        <div class="scanline" id="scanline"></div>
         
-        <div class="sao-modal" id="saoModal">
-            <!-- 四個 L 型角標 -->
-            <div class="corner tl" id="tl"></div>
-            <div class="corner tr" id="tr"></div>
-            <div class="corner bl" id="bl"></div>
-            <div class="corner br" id="br"></div>
+        <div class="sao-panel" id="panel">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
             
-            <div class="lock-flash" id="lockFlash"></div>
-
             <div class="content">
-                <div class="title" id="title">S.A.O SYSTEM ACTIVE</div>
-                <div class="description" id="desc">
-                    正在同步黑金數據庫...<br>
-                    小說類別：頂級奢華-電影級<br>
-                    狀態：完全鎖定 (Locked-on)
-                </div>
+                <div class="title" id="title">ARCHIVE-X</div>
+                <div class="status" id="status">SYSTEM STATUS: OPTIMIZED // ACCESS GRANTED</div>
             </div>
-            <div class="close-btn" id="closeBtn" onclick="closeSAO()">[ 關閉連接 ]</div>
+            <div class="close-btn" id="closeBtn" onclick="closeSystem()">[ TERMINATE CONNECTION ]</div>
         </div>
     </div>
 
     <script>
-        function openSAO() {
+        function activateSystem() {
             const overlay = document.getElementById('overlay');
             overlay.style.display = 'flex';
 
-            // 創建 GSAP 時間軸
             const tl = gsap.timeline();
 
-            // 1. 激活：金色圓環爆發
-            tl.to("#goldRing", {
-                scale: 80,
-                opacity: 1,
-                duration: 0.4,
-                ease: "expo.out"
-            })
-            .to("#goldRing", {
+            // 1. 空間切換：背景快速縮小，創造「進入虛擬空間」的感覺
+            tl.to("body", { scale: 1.1, duration: 0.5, ease: "power2.inOut" });
+
+            // 2. 數位構造：角標像碎片一樣從四方飛入
+            tl.from(".corner", {
+                x: (i) => (i % 2 === 0 ? -1000 : 1000),
+                y: (i) => (i < 2 ? -1000 : 1000),
+                rotate: (i) => (i * 90),
                 opacity: 0,
-                duration: 0.2
+                duration: 0.6,
+                stagger: 0.1,
+                ease: "expo.out"
             }, "-=0.2");
 
-            // 2. 構造：四個角標從外向內收縮
-            tl.from(".corner", {
-                x: (i) => (i % 2 === 0 ? -500 : 500),
-                y: (i) => (i < 2 ? -500 : 500),
-                opacity: 0,
-                duration: 0.5,
-                stagger: 0.05,
-                ease: "power4.out"
-            }, "-=0.3");
-
-            // 3. 展開：主體彈出
-            tl.to("#saoModal", {
+            // 3. 主體展開：3D 翻轉 + 縮放
+            tl.to("#panel", {
                 opacity: 1,
                 scale: 1,
-                duration: 0.6,
-                ease: "back.out(1.7)"
-            }, "-=0.2");
+                rotateX: 0,
+                duration: 0.8,
+                ease: "back.out(1.2)"
+            }, "-=0.4");
 
-            // 4. 鎖定：強光閃爍
-            tl.to("#lockFlash", {
-                opacity: 0.3,
-                duration: 0.1,
-                repeat: 1,
-                yoyo: true,
-                ease: "power2.inOut"
+            // 4. 電影級鎖定：螢幕震動 + 掃描線
+            tl.to("body", {
+                x: 5, duration: 0.05, repeat: 5, yoyo: true, ease: "power1.inOut"
             });
-
-            // 5. 填充：文字流刷入
-            tl.to("#title", {
+            
+            tl.to("#scanline", {
                 opacity: 1,
-                y: 0,
-                duration: 0.4,
-                ease: "power2.out"
+                top: "0%",
+                duration: 0,
             }, "-=0.1");
             
-            tl.to("#desc", {
+            tl.to("#scanline", {
+                top: "100%",
+                duration: 0.6,
+                ease: "power2.inOut",
+                onComplete: () => gsap.to("#scanline", {opacity: 0})
+            });
+
+            // 5. 內容注入：文字閃爍刷入
+            tl.to("#title", {
                 opacity: 1,
-                duration: 0.5,
+                duration: 0.1,
+                repeat: 3,
+                yoyo: true,
+                ease: "power2.inOut"
+            }, "-=0.3");
+            
+            tl.to("#status", {
+                opacity: 1,
+                duration: 0.8,
                 ease: "power2.out"
             }, "-=0.2");
 
             tl.to("#closeBtn", {
                 opacity: 1,
-                duration: 0.3
-            }, "-=0.2");
+                duration: 0.5
+            }, "-=0.1");
         }
 
-        function closeSAO() {
+        function closeSystem() {
             const tl = gsap.timeline();
-            
-            tl.to("#saoModal, #closeBtn, #title, #desc", {
-                opacity: 0,
-                scale: 0.8,
-                duration: 0.3,
-                ease: "power2.in"
+            tl.to("#panel", { 
+                opacity: 0, 
+                scale: 0.5, 
+                rotateX: -20, 
+                duration: 0.4, 
+                ease: "expo.in" 
             });
-            
-            tl.to(".corner", {
-                opacity: 0,
-                scale: 0,
-                duration: 0.2,
-                stagger: 0.05
-            }, "-=0.2");
-            
-            tl.to("#overlay", {
-                opacity: 0,
-                duration: 0.4,
+            tl.to(".corner", { 
+                opacity: 0, 
+                scale: 0, 
+                stagger: 0.05, 
+                duration: 0.3 
+            }, "-=0.3");
+            tl.to("#overlay", { 
+                opacity: 0, 
+                duration: 0.5, 
                 onComplete: () => {
                     document.getElementById('overlay').style.display = 'none';
                     document.getElementById('overlay').style.opacity = 1;
-                }
+                } 
             });
+            tl.to("body", { scale: 1, duration: 0.5 });
         }
     </script>
 </body>
