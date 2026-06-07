@@ -1,564 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAO Black Gold System Demo</title>
+    <!-- 引入 GSAP 動畫庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --obsidian: #0D0D0D;
+            --royal-gold: #D4AF37;
+            --satin-gold: #B8860B;
+            --amber-glow: #FFD700;
+            --pearl-white: #E0E0E0;
+            --gold-gradient: linear-gradient(45deg, #B8860B, #F9A602, #B8860B);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--obsidian);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--pearl-white);
+        }
+
+        /* 背景粒子裝飾 */
+        .bg-dust {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        /* 觸發按鈕 */
+        .trigger-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--royal-gold);
+            background: transparent;
+            border: 2px solid var(--royal-gold);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            z-index: 10;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+
+        .trigger-btn:hover {
+            background: var(--royal-gold);
+            color: var(--obsidian);
+            box-shadow: 0 0 20px var(--royal-gold);
+        }
+
+        /* SAO 遮罩層 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(15px);
+            display: none;
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 金色爆發環 */
+        .gold-ring {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border: 2px solid var(--amber-glow);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* SAO 彈窗主體 */
+        .sao-modal {
+            position: relative;
+            width: 500px;
+            height: 350px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.8);
+            z-index: 101;
+        }
+
+        /* L-Shape 角標 */
+        .corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--royal-gold);
+            z-index: 102;
+        }
+        .tl { top: -5px; left: -5px; border-right: 0; border-bottom: 0; }
+        .tr { top: -5px; right: -5px; border-left: 0; border-bottom: 0; }
+        .bl { bottom: -5px; left: -5px; border-right: 0; border-top: 0; }
+        .br { bottom: -5px; right: -5px; border-left: 0; border-top: 0; }
+
+        /* 鎖定閃光 */
+        .lock-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 103;
+        }
+
+        /* 內容文字 */
+        .content {
+            text-align: center;
+            padding: 40px;
+        }
+        .title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            opacity: 0;
+        }
+        .description {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--pearl-white);
+            opacity: 0;
+        }
+
+        .close-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: var(--royal-gold);
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: underline;
+            opacity: 0;
+        }
+
+    </style>
+</head>
 <body>
-<canvas id="raphaelCanvas" aria-hidden="true"></canvas>
-<div class="fx-noise" aria-hidden="true"></div>
-<div class="fx-lines" aria-hidden="true"></div>
-<div class="fx-vignette" aria-hidden="true"></div>
 
-<div class="app">
-  <header class="topbar">
-    <div class="brand">
-      <small>OPTICAL MAGICULE ENGINE</small>
-      <strong>Wisdom King Interface</strong>
-    </div>
+    <div class="bg-dust"></div>
+    
+    <button class="trigger-btn" onclick="openSAO()">激活系統接口</button>
 
-    <div class="status-strip" aria-label="系統狀態">
-      <i class="status-dot"></i>
-      <span id="statusText">PARALLEL CALCULATION // STABLE</span>
-    </div>
+    <!-- 彈窗構造 -->
+    <div class="overlay" id="overlay">
+        <div class="gold-ring" id="goldRing"></div>
+        
+        <div class="sao-modal" id="saoModal">
+            <!-- 四個 L 型角標 -->
+            <div class="corner tl" id="tl"></div>
+            <div class="corner tr" id="tr"></div>
+            <div class="corner bl" id="bl"></div>
+            <div class="corner br" id="br"></div>
+            
+            <div class="lock-flash" id="lockFlash"></div>
 
-    <div class="top-actions">
-      <button class="ghost-btn" id="reduceBtn" type="button">低耗模式</button>
-      <button class="primary-btn" id="boostBtn" type="button">啟動演算</button>
-    </div>
-  </header>
-
-  <main class="main-grid">
-    <aside class="hud-column" aria-label="演算資訊面板">
-      <section class="hud-panel">
-        <div class="hud-title">
-          <span>THOUGHT</span>
-          <span>ACCEL.</span>
+            <div class="content">
+                <div class="title" id="title">S.A.O SYSTEM ACTIVE</div>
+                <div class="description" id="desc">
+                    正在同步黑金數據庫...<br>
+                    小說類別：頂級奢華-電影級<br>
+                    狀態：完全鎖定 (Locked-on)
+                </div>
+            </div>
+            <div class="close-btn" id="closeBtn" onclick="closeSAO()">[ 關閉連接 ]</div>
         </div>
-        <div class="hud-value" id="accelValue">000%</div>
-        <p class="hud-desc">思考加速同步中，核心光環會依狀態提高轉速與亮度。</p>
-      </section>
-
-      <section class="hud-panel">
-        <div class="hud-title">
-          <span>RUNE</span>
-          <span>SYNC</span>
-        </div>
-        <div class="bars">
-          <div class="bar"><i style="--w: 92%"></i></div>
-          <div class="bar"><i style="--w: 76%"></i></div>
-          <div class="bar"><i style="--w: 88%"></i></div>
-        </div>
-        <p class="hud-desc">多層符文環採非同步旋轉，避免廉價貼圖感。</p>
-      </section>
-
-      <section class="hud-panel">
-        <div class="hud-title">
-          <span>MAGICULE</span>
-          <span>FLOW</span>
-        </div>
-        <div class="hud-value">A+</div>
-        <p class="hud-desc">粒子沿軌道吸附，模擬魔素流體被核心牽引。</p>
-      </section>
-    </aside>
-
-    <section class="center-stage" aria-label="核心視覺展示">
-      <div class="center-copy">
-        <div class="kicker">ANALYTICAL APPRAISAL READY</div>
-        <h1>
-          RAPHAEL
-          <span>OPTICAL CORE</span>
-        </h1>
-        <p>
-          以金色核心、青藍符文、玻璃 HUD 與高對比暗場建立沉浸式魔法演算介面。
-          背景與核心皆為即時動畫，非靜態貼圖。
-        </p>
-      </div>
-    </section>
-
-    <aside class="login-card" aria-label="登入預覽卡片">
-      <div class="card-head">
-        <div>
-          <h2>系統登入</h2>
-          <p>請選擇驗證方式，進入西幻稿件演算系統。</p>
-        </div>
-        <div class="seal">AI</div>
-      </div>
-
-      <div class="field">
-        <label for="account">帳號或 Email</label>
-        <input id="account" autocomplete="email" placeholder="輸入帳號" />
-      </div>
-
-      <div class="field">
-        <label for="passcode">驗證代碼</label>
-        <input id="passcode" type="password" autocomplete="current-password" placeholder="輸入驗證代碼" />
-      </div>
-
-      <div class="button-row">
-        <button class="primary-btn" type="button" id="openModalBtn">開啟提示</button>
-        <button class="ghost-btn" type="button">訪客登入</button>
-      </div>
-
-      <p class="card-note">
-        手機彈窗已改用 fixed layer + translate3d + opacity，不使用 display 反覆切換，可降低 Chrome / Safari 閃爍。
-      </p>
-    </aside>
-  </main>
-
-  <footer class="ticker" aria-hidden="true">
-    <div class="ticker-track">
-      <span><b>THOUGHT ACCELERATION</b> // PARALLEL CALCULATION // ANALYTICAL APPRAISAL // ALL OF CREATION // MAGICULE FLOW</span>
-      <span><b>THOUGHT ACCELERATION</b> // PARALLEL CALCULATION // ANALYTICAL APPRAISAL // ALL OF CREATION // MAGICULE FLOW</span>
-    </div>
-  </footer>
-</div>
-
-<section class="modal-layer" id="modalLayer" aria-hidden="true">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <h3 id="modalTitle">演算提示視窗</h3>
-    <p>
-      這個彈窗是針對手機版修正過的版本：不使用會造成版面重排的寬高動畫，
-      只使用 <b>opacity</b> 與 <b>transform</b>，並加入 <b>translate3d</b>、<b>contain</b>、<b>backface-visibility</b>。
-    </p>
-
-    <div class="modal-list">
-      <div><b>核心風格：</b>金色中心爆光、青藍符文環、暗場玻璃質感。</div>
-      <div><b>動畫策略：</b>Canvas 即時繪製圓環、粒子、文字軌道與掃描線。</div>
-      <div><b>手機優化：</b>按鈕至少 44px、彈窗固定圖層、避免重排與視窗閃爍。</div>
     </div>
 
-    <div class="modal-actions">
-      <button class="ghost-btn" id="closeModalBtn" type="button">關閉</button>
-      <button class="primary-btn" id="boostModalBtn" type="button">同步核心</button>
-    </div>
-  </div>
-</section>
-
-<script>
-(() => {
-  const canvas = document.getElementById("raphaelCanvas");
-  const ctx = canvas.getContext("2d", { alpha: true });
-
-  const statusText = document.getElementById("statusText");
-  const accelValue = document.getElementById("accelValue");
-  const boostBtn = document.getElementById("boostBtn");
-  const reduceBtn = document.getElementById("reduceBtn");
-  const openModalBtn = document.getElementById("openModalBtn");
-  const closeModalBtn = document.getElementById("closeModalBtn");
-  const boostModalBtn = document.getElementById("boostModalBtn");
-  const modalLayer = document.getElementById("modalLayer");
-
-  const DPR_LIMIT = 1.75;
-  const mqMobile = window.matchMedia("(max-width: 640px)");
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  let width = 0;
-  let height = 0;
-  let dpr = 1;
-  let time = 0;
-  let last = performance.now();
-  let boost = 0;
-  let lowPower = false;
-  let pointerX = 0.5;
-  let pointerY = 0.5;
-  let particles = [];
-  let bokeh = [];
-
-  const TAU = Math.PI * 2;
-
-  const runeText =
-    "THOUGHT ACCELERATION  PARALLEL CALCULATION  ANALYTICAL APPRAISAL  ALL OF CREATION  ";
-
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
-  }
-
-  function lerp(a, b, t) {
-    return a + (b - a) * t;
-  }
-
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
-    width = Math.floor(window.innerWidth);
-    height = Math.floor(window.innerHeight);
-
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    makeParticles();
-  }
-
-  function makeParticles() {
-    const isMobile = mqMobile.matches;
-    const count = lowPower || reduceMotion ? 46 : isMobile ? 84 : 150;
-    const bokehCount = lowPower || reduceMotion ? 18 : isMobile ? 30 : 56;
-
-    particles = Array.from({ length: count }, (_, i) => {
-      const seed = Math.random();
-      return {
-        seed,
-        angle: Math.random() * TAU,
-        speed: lerp(.08, .44, Math.random()) * (Math.random() > .5 ? 1 : -1),
-        radius: lerp(80, Math.min(width, height) * .43, Math.random()),
-        size: lerp(.7, 2.4, Math.random()),
-        layer: i % 3,
-        flicker: Math.random() * TAU
-      };
-    });
-
-    bokeh = Array.from({ length: bokehCount }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      r: lerp(16, 72, Math.random()),
-      a: lerp(.025, .16, Math.random()),
-      vx: lerp(-.06, .06, Math.random()),
-      vy: lerp(-.03, .04, Math.random()),
-      hue: Math.random() > .58 ? "gold" : "cyan"
-    }));
-  }
-
-  function drawBackground(cx, cy, now) {
-    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(width, height) * .78);
-    bg.addColorStop(0, `rgba(255, 215, 0, ${.15 + boost * .08})`);
-    bg.addColorStop(.14, `rgba(0, 212, 255, ${.08 + boost * .05})`);
-    bg.addColorStop(.45, "rgba(4, 11, 22, .52)");
-    bg.addColorStop(1, "rgba(2, 5, 10, .96)");
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-
-    for (const p of bokeh) {
-      p.x += p.vx * (1 + boost * 2);
-      p.y += p.vy * (1 + boost * 2);
-
-      if (p.x < -120) p.x = width + 120;
-      if (p.x > width + 120) p.x = -120;
-      if (p.y < -120) p.y = height + 120;
-      if (p.y > height + 120) p.y = -120;
-
-      const pulse = .65 + .35 * Math.sin(now * .55 + p.r);
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
-      if (p.hue === "gold") {
-        g.addColorStop(0, `rgba(255, 230, 140, ${p.a * pulse})`);
-        g.addColorStop(.35, `rgba(214, 166, 77, ${p.a * .45 * pulse})`);
-      } else {
-        g.addColorStop(0, `rgba(170, 255, 255, ${p.a * pulse})`);
-        g.addColorStop(.35, `rgba(0, 212, 255, ${p.a * .48 * pulse})`);
-      }
-      g.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, TAU);
-      ctx.fill();
-    }
-
-    ctx.restore();
-  }
-
-  function strokeCircle(r, color, alpha, lw, dash = [], rotation = 0) {
-    ctx.save();
-    ctx.rotate(rotation);
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lw;
-    ctx.setLineDash(dash);
-    ctx.lineDashOffset = -rotation * 60;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 18;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, TAU);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawPolygon(sides, r, rotation, color, alpha, lw) {
-    ctx.save();
-    ctx.rotate(rotation);
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lw;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 18;
-    ctx.beginPath();
-
-    for (let i = 0; i <= sides; i++) {
-      const a = -Math.PI / 2 + i * TAU / sides;
-      const x = Math.cos(a) * r;
-      const y = Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawGlyphRing(radius, text, now, speed, color, alpha, size, reverse = false) {
-    const chars = text.repeat(4);
-    const count = Math.floor(clamp(radius / 3.6, 42, 150));
-    const step = TAU / count;
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
-    ctx.font = `${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    const stepped = Math.floor(now * 12 * speed) / 12;
-    const base = stepped * (reverse ? -1 : 1);
-
-    for (let i = 0; i < count; i++) {
-      const ch = chars[i % chars.length];
-      if (ch === " ") continue;
-
-      const flicker = Math.sin(now * 4 + i * 1.7) > -.65 ? 1 : .28;
-      ctx.globalAlpha = alpha * flicker;
-
-      const a = i * step + base;
-      ctx.save();
-      ctx.rotate(a);
-      ctx.translate(0, -radius);
-      ctx.rotate(Math.PI / 2);
-      ctx.fillText(ch, 0, 0);
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }
-
-  function drawTicks(radius, count, now, color, alpha, len = 10) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
-    ctx.rotate(now);
-
-    for (let i = 0; i < count; i++) {
-      const a = i * TAU / count;
-      const strong = i % 8 === 0;
-      ctx.save();
-      ctx.rotate(a);
-      ctx.beginPath();
-      ctx.moveTo(0, -radius);
-      ctx.lineTo(0, -radius + (strong ? len * 1.8 : len));
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }
-
-  function drawParticles(cx, cy, now, coreR, dt) {
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-
-    const oval = mqMobile.matches ? .76 : .62;
-
-    for (const p of particles) {
-      const accel = 1 + boost * 5.5;
-      p.angle += p.speed * dt * accel;
-
-      const lock = boost * .48;
-      const target = coreR * lerp(.82, 1.58, (p.seed * 1.618) % 1);
-      p.radius = lerp(p.radius, target, .012 + lock * .018);
-
-      const wobble = Math.sin(now * 2.2 + p.flicker) * 8 * (1 - boost * .5);
-      const r = p.radius + wobble;
-      const x = cx + Math.cos(p.angle) * r;
-      const y = cy + Math.sin(p.angle) * r * oval;
-
-      const goldChance = p.seed > .88 || boost > .72;
-      const color = goldChance ? "255,215,0" : p.seed > .42 ? "226,232,240" : "0,212,255";
-      const alpha = lerp(.18, .72, p.seed) * (goldChance ? .82 : 1);
-
-      ctx.fillStyle = `rgba(${color}, ${alpha})`;
-      ctx.shadowColor = `rgba(${color}, 1)`;
-      ctx.shadowBlur = goldChance ? 18 : 12;
-      ctx.beginPath();
-      ctx.arc(x, y, p.size * (1 + boost * 1.2), 0, TAU);
-      ctx.fill();
-
-      if (!lowPower && !reduceMotion && p.seed > .62) {
-        ctx.strokeStyle = `rgba(${color}, ${alpha * .16})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-      }
-    }
-
-    ctx.restore();
-  }
-
-  function drawCore(cx, cy, now, dt) {
-    const minSide = Math.min(width, height);
-    const coreR = clamp(minSide * (mqMobile.matches ? .32 : .29), 116, 310);
-    const over = boost;
-
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.globalCompositeOperation = "lighter";
-
-    const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, coreR * 1.6);
-    halo.addColorStop(0, `rgba(255, 245, 180, ${.32 + over * .2})`);
-    halo.addColorStop(.12, `rgba(255, 215, 0, ${.28 + over * .16})`);
-    halo.addColorStop(.34, `rgba(0, 212, 255, ${.12 + over * .08})`);
-    halo.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = halo;
-    ctx.beginPath();
-    ctx.arc(0, 0, coreR * 1.65, 0, TAU);
-    ctx.fill();
-
-    const spin = now * (0.18 + over * .48);
-    const spinFast = now * (0.72 + over * 1.6);
-
-    strokeCircle(coreR * .32, "rgba(255, 242, 180, .95)", .95, 1.4, [10, 8], -spinFast);
-    strokeCircle(coreR * .46, "rgba(0, 212, 255, .85)", .82, 1.2, [4, 9], spinFast);
-    strokeCircle(coreR * .58, "rgba(255, 215, 0, .78)", .76, 1.4, [18, 12], -spin * 1.7);
-    strokeCircle(coreR * .72, "rgba(226, 232, 240, .66)", .66, 1.1, [2, 12], spin * 2.4);
-    strokeCircle(coreR * .91, "rgba(0, 212, 255, .72)", .72, 1.4, [34, 12, 6, 14], -spin);
-    strokeCircle(coreR * 1.05, "rgba(255, 215, 0, .74)", .74, 1.6, [8, 10], spin * .72);
-    strokeCircle(coreR * 1.22, "rgba(0, 212, 255, .54)", .58, 1, [3, 16], -spin * 1.15);
-
-    drawTicks(coreR * 1.32, 96, spin * .8, "rgba(0, 212, 255, .75)", .64, 12);
-    drawTicks(coreR * 1.12, 72, -spin, "rgba(255, 215, 0, .65)", .54, 8);
-
-    drawPolygon(3, coreR * .36, -spinFast * .7, "rgba(255, 215, 0, .82)", .84, 1.4);
-    drawPolygon(6, coreR * .52, spin * .52, "rgba(0, 212, 255, .72)", .72, 1.2);
-    drawPolygon(8, coreR * .82, -spin * .45, "rgba(226, 232, 240, .42)", .42, 1);
-
-    drawGlyphRing(coreR * .68, runeText, now, .14 + over * .18, "rgba(226, 232, 240, .95)", .56, clamp(coreR * .045, 9, 14), false);
-    drawGlyphRing(coreR * .99, runeText, now, .08 + over * .13, "rgba(255, 215, 0, .96)", .62, clamp(coreR * .048, 10, 16), true);
-    drawGlyphRing(coreR * 1.17, runeText, now, .05 + over * .1, "rgba(0, 212, 255, .96)", .46, clamp(coreR * .042, 9, 14), false);
-
-    const arcCount = lowPower ? 4 : 8;
-    for (let i = 0; i < arcCount; i++) {
-      const rr = coreR * lerp(.42, 1.28, i / arcCount);
-      const start = now * (.5 + i * .04) + i * .72;
-      const end = start + lerp(.24, .92, ((i * 37) % 10) / 10);
-      ctx.strokeStyle = i % 2 ? "rgba(255, 215, 0, .72)" : "rgba(0, 212, 255, .76)";
-      ctx.lineWidth = i % 2 ? 2 : 1.2;
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.beginPath();
-      ctx.arc(0, 0, rr, start, end);
-      ctx.stroke();
-    }
-
-    const core = ctx.createRadialGradient(0, 0, 0, 0, 0, coreR * .24);
-    core.addColorStop(0, "rgba(255, 255, 240, 1)");
-    core.addColorStop(.2, `rgba(255, 215, 0, ${.9 + over * .1})`);
-    core.addColorStop(.56, `rgba(0, 212, 255, ${.28 + over * .16})`);
-    core.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = core;
-    ctx.shadowColor = "rgba(255, 215, 0, 1)";
-    ctx.shadowBlur = 36 + over * 32;
-    ctx.beginPath();
-    ctx.arc(0, 0, coreR * .25 * (1 + over * .08), 0, TAU);
-    ctx.fill();
-
-    for (let i = 0; i < 16; i++) {
-      const a = i * TAU / 16 + now * .18;
-      const len = coreR * lerp(.26, .52, i % 2);
-      ctx.strokeStyle = `rgba(255, 245, 180, ${.16 + over * .14})`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(a) * coreR * .06, Math.sin(a) * coreR * .06);
-      ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-
-    drawParticles(cx, cy, now, coreR, dt);
-  }
-
-  function draw() {
-    const nowMs = performance.now();
-    const rawDt = Math.min(.04, (nowMs - last) / 1000);
-    last = nowMs;
-
-    const dt = reduceMotion ? 0 : rawDt;
-    time += dt;
-
-    boost = lerp(boost, window.__boostTarget || 0, .045);
-
-    const cx = width * (0.5 + (pointerX - .5) * .025);
-    const cy = height * (mqMobile.matches ? .37 : .49) + (pointerY - .5) * 10;
-
-    drawBackground(cx, cy, time);
-    drawCore(cx, cy, time, dt);
-
-    const val = Math.round(boost * 100);
-    accelValue.textContent = String(val).padStart(3, "0") + "%";
-
-    requestAnimationFrame(draw);
-  }
-
-  function startBoost() {
-    window.__boostTarget = 1;
-    statusText.textContent = "THOUGHT ACCELERATION // ACTIVE";
-    boostBtn.textContent = "演算啟動中";
-    setTimeout(() => {
-      window.__boostTarget = 0;
-      statusText.textContent = "PARALLEL CALCULATION // STABLE";
-      boostBtn.textContent = "啟動演算";
-    }, 5200);
-  }
-
-  function setLowPower() {
-    lowPower = !lowPower;
-    reduceBtn.textContent = lowPower ? "標準模式" : "低耗模式";
-    statusText.textContent = lowPower
-      ? "LOW POWER // MOBILE SAFE"
-      : "PARALLEL CALCULATION // STABLE";
-    makeParticles();
-  }
-
-  function openModal() {
-    document.body.classList.add("modal-open");
-    modalLayer.setAttribute("aria-hidden", "false");
-    closeModalBtn.focus({ preventScroll: true });
-  }
-
-  function closeModal() {
-    document.body.classList.remove("modal-open");
-    modalLayer.setAttribute("aria-hidden", "true");
-    openModalBtn.focus({ preventScroll: true });
-  }
-
-  window.addEventListener("resize", resize, { passive: true });
-
-  window.addEventListener("pointermove", (event) => {
-    pointerX = clamp(event.clientX / Math.max(1, width), 0, 1);
-    pointerY = clamp(event.clientY / Math.max(1, height), 0, 1);
-  }, { passive: true });
-
-  boostBtn.addEventListener("click", startBoost);
-  boostModalBtn.addEventListener("click", startBoost);
-  reduceBtn.addEventListener("click", setLowPower);
-  openModalBtn.addEventListener("click", openModal);
-  closeModalBtn.addEventListener("click", closeModal);
-
-  modalLayer.addEventListener("click", (event) => {
-    if (event.target === modalLayer) closeModal();
-  });
-
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && document.body.classList.contains("modal-open")) {
-      closeModal();
-    }
-  });
-
-  resize();
-  requestAnimationFrame(draw);
-})();
-</script>
+    <script>
+        function openSAO() {
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'flex';
+
+            // 創建 GSAP 時間軸
+            const tl = gsap.timeline();
+
+            // 1. 激活：金色圓環爆發
+            tl.to("#goldRing", {
+                scale: 80,
+                opacity: 1,
+                duration: 0.4,
+                ease: "expo.out"
+            })
+            .to("#goldRing", {
+                opacity: 0,
+                duration: 0.2
+            }, "-=0.2");
+
+            // 2. 構造：四個角標從外向內收縮
+            tl.from(".corner", {
+                x: (i) => (i % 2 === 0 ? -500 : 500),
+                y: (i) => (i < 2 ? -500 : 500),
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.05,
+                ease: "power4.out"
+            }, "-=0.3");
+
+            // 3. 展開：主體彈出
+            tl.to("#saoModal", {
+                opacity: 1,
+                scale: 1,
+                duration: 0.6,
+                ease: "back.out(1.7)"
+            }, "-=0.2");
+
+            // 4. 鎖定：強光閃爍
+            tl.to("#lockFlash", {
+                opacity: 0.3,
+                duration: 0.1,
+                repeat: 1,
+                yoyo: true,
+                ease: "power2.inOut"
+            });
+
+            // 5. 填充：文字流刷入
+            tl.to("#title", {
+                opacity: 1,
+                y: 0,
+                duration: 0.4,
+                ease: "power2.out"
+            }, "-=0.1");
+            
+            tl.to("#desc", {
+                opacity: 1,
+                duration: 0.5,
+                ease: "power2.out"
+            }, "-=0.2");
+
+            tl.to("#closeBtn", {
+                opacity: 1,
+                duration: 0.3
+            }, "-=0.2");
+        }
+
+        function closeSAO() {
+            const tl = gsap.timeline();
+            
+            tl.to("#saoModal, #closeBtn, #title, #desc", {
+                opacity: 0,
+                scale: 0.8,
+                duration: 0.3,
+                ease: "power2.in"
+            });
+            
+            tl.to(".corner", {
+                opacity: 0,
+                scale: 0,
+                duration: 0.2,
+                stagger: 0.05
+            }, "-=0.2");
+            
+            tl.to("#overlay", {
+                opacity: 0,
+                duration: 0.4,
+                onComplete: () => {
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('overlay').style.opacity = 1;
+                }
+            });
+        }
+    </script>
 </body>
 </html>
