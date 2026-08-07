@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RFQ Pilot — B2B 詢報價自動化 Agent 測試版</title>
+<style>
+  :root{
+    --bg:#0b1020;
+    --panel:#121a2f;
+    --panel2:#18233d;
+    --line:#263453;
+    --text:#edf3ff;
+    --muted:#9fb0cf;
+    --accent:#6ea8fe;
+    --accent2:#8b7cff;
+    --ok:#4fd1a5;
+    --warn:#ffc857;
+    --danger:#ff6b7a;
+    --info:#67d4ff;
+    --shadow:0 18px 55px rgba(0,0,0,.28);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+    background:
+      radial-gradient(circle at 85% 8%, rgba(110,168,254,.14), transparent 28%),
+      radial-gradient(circle at 20% 15%, rgba(139,124,255,.12), transparent 25%),
+      var(--bg);
+    color:var(--text);
+  }
+  button,input,select,textarea{font:inherit}
+  button{cursor:pointer}
+  .app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+  .sidebar{
+    border-right:1px solid var(--line);
+    background:rgba(10,16,31,.86);
+    backdrop-filter:blur(16px);
+    padding:22px 16px;
+    position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;gap:12px;align-items:center;padding:4px 8px 22px}
+  .logo{
+    width:40px;height:40px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:grid;place-items:center;font-weight:900;color:#061020;
+    box-shadow:0 12px 28px rgba(110,168,254,.25)
+  }
+  .brand strong{display:block;font-size:15px}
+  .brand span{color:var(--muted);font-size:12px}
+  .nav{display:grid;gap:7px}
+  .nav button{
+    width:100%;border:0;background:transparent;color:var(--muted);
+    text-align:left;padding:11px 12px;border-radius:10px;
+    display:flex;gap:10px;align-items:center
+  }
+  .nav button.active,.nav button:hover{background:var(--panel2);color:var(--text)}
+  .side-note{
+    margin-top:24px;padding:14px;border:1px solid var(--line);border-radius:12px;
+    color:var(--muted);font-size:12px;line-height:1.6;background:rgba(255,255,255,.02)
+  }
+  main{padding:24px 28px 40px;overflow:hidden}
+  .topbar{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}
+  .topbar h1{margin:0 0 6px;font-size:26px}
+  .topbar p{margin:0;color:var(--muted)}
+  .top-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    border:1px solid var(--line);background:var(--panel2);color:var(--text);
+    border-radius:10px;padding:9px 13px
+  }
+  .btn:hover{filter:brightness(1.08)}
+  .btn.primary{border-color:transparent;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#07101f;font-weight:800}
+  .btn.ok{background:rgba(79,209,165,.13);border-color:rgba(79,209,165,.45);color:#8bf0cf}
+  .btn.danger{background:rgba(255,107,122,.12);border-color:rgba(255,107,122,.45);color:#ff9aa5}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:16px}
+  .card{
+    background:linear-gradient(180deg,rgba(24,35,61,.92),rgba(18,26,47,.92));
+    border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)
+  }
+  .card.pad{padding:16px}
+  .metric .label{font-size:12px;color:var(--muted)}
+  .metric .value{font-size:28px;font-weight:850;margin:7px 0 3px}
+  .metric .sub{font-size:12px;color:var(--muted)}
+  .layout{grid-template-columns:360px minmax(0,1fr)}
+  .section-title{display:flex;justify-content:space-between;align-items:center;padding:15px 16px;border-bottom:1px solid var(--line)}
+  .section-title h2{font-size:14px;margin:0}
+  .section-title .hint{font-size:11px;color:var(--muted)}
+  .rfq-list{max-height:730px;overflow:auto}
+  .rfq-item{
+    padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;
+    transition:.15s;background
+  }
+  .rfq-item:hover,.rfq-item.active{background:rgba(110,168,254,.08)}
+  .rfq-item .row,.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .rfq-item strong{font-size:13px}
+  .rfq-item p{margin:6px 0;color:var(--muted);font-size:12px;line-height:1.5}
+  .badge{
+    display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;
+    border:1px solid var(--line);font-size:10px;color:var(--muted);white-space:nowrap
+  }
+  .badge.ok{color:#82e7c6;border-color:rgba(79,209,165,.4);background:rgba(79,209,165,.08)}
+  .badge.warn{color:#ffd875;border-color:rgba(255,200,87,.4);background:rgba(255,200,87,.08)}
+  .badge.danger{color:#ff9aa5;border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08)}
+  .badge.info{color:#8ee4ff;border-color:rgba(103,212,255,.4);background:rgba(103,212,255,.08)}
+  .workspace{min-width:0}
+  .tabs{display:flex;gap:7px;padding:12px;border-bottom:1px solid var(--line);overflow:auto}
+  .tab{
+    border:0;background:transparent;color:var(--muted);padding:8px 11px;border-radius:8px;white-space:nowrap
+  }
+  .tab.active{background:var(--panel2);color:var(--text)}
+  .tabview{display:none;padding:16px}
+  .tabview.active{display:block}
+  .summary-grid{grid-template-columns:1.1fr .9fr}
+  .box{
+    border:1px solid var(--line);border-radius:13px;padding:14px;background:rgba(255,255,255,.018)
+  }
+  .box h3{margin:0 0 10px;font-size:13px}
+  .email{
+    color:#dce6fa;font-size:13px;line-height:1.8;white-space:pre-wrap
+  }
+  .attachments{display:grid;gap:8px}
+  .attachment{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .attachment span{font-size:12px}
+  .field-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .field label{display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+  .field input,.field select,.field textarea{
+    width:100%;background:#0f172a;border:1px solid var(--line);color:var(--text);
+    border-radius:9px;padding:9px 10px;outline:none
+  }
+  .field textarea{min-height:70px;resize:vertical}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;background:var(--panel)}
+  td input{
+    width:100%;min-width:80px;background:#0f172a;color:var(--text);border:1px solid var(--line);
+    border-radius:7px;padding:6px
+  }
+  .table-wrap{overflow:auto;max-height:470px}
+  .confidence{display:flex;align-items:center;gap:8px}
+  .bar{height:6px;width:70px;background:#0b1020;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--ok))}
+  .warning-list{display:grid;gap:9px}
+  .warning{
+    border:1px solid rgba(255,200,87,.28);background:rgba(255,200,87,.06);
+    padding:11px;border-radius:10px;font-size:12px;line-height:1.55
+  }
+  .warning.danger{border-color:rgba(255,107,122,.34);background:rgba(255,107,122,.06)}
+  .flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .step{padding:8px 10px;border-radius:10px;border:1px solid var(--line);font-size:11px;color:var(--muted)}
+  .step.done{border-color:rgba(79,209,165,.4);color:#88e9c9;background:rgba(79,209,165,.07)}
+  .step.current{border-color:rgba(110,168,254,.55);color:#acd0ff;background:rgba(110,168,254,.09)}
+  .arrow{color:#5f7196}
+  .quote-head{display:flex;justify-content:space-between;gap:18px;margin-bottom:14px}
+  .quote-head h2{margin:0 0 5px}
+  .quote-head p{margin:0;color:var(--muted);font-size:12px}
+  .quote-total{text-align:right}
+  .quote-total strong{font-size:24px}
+  .quote-total span{display:block;color:var(--muted);font-size:11px}
+  .footer-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:15px;flex-wrap:wrap}
+  .roi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .chart{
+    height:190px;display:flex;align-items:flex-end;gap:14px;padding:18px 8px 8px
+  }
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .column{width:100%;max-width:50px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--accent),var(--accent2));min-height:10px}
+  .col span{font-size:10px;color:var(--muted)}
+  .timeline{display:grid;gap:10px}
+  .event{display:grid;grid-template-columns:110px 1fr;gap:12px;font-size:12px}
+  .event time{color:var(--muted)}
+  .event div{border-left:2px solid var(--line);padding-left:12px}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+  .toast{
+    position:fixed;right:24px;bottom:24px;background:#18233d;border:1px solid var(--line);
+    box-shadow:var(--shadow);border-radius:12px;padding:12px 15px;opacity:0;transform:translateY(10px);
+    pointer-events:none;transition:.2s;z-index:20;font-size:12px
+  }
+  .toast.show{opacity:1;transform:translateY(0)}
+  .screen{display:none}.screen.active{display:block}
+  @media(max-width:1050px){
+    .app{grid-template-columns:80px 1fr}
+    .brand .txt,.nav button span,.side-note{display:none}
+    .sidebar{padding:18px 10px}
+    .brand{justify-content:center;padding-left:0;padding-right:0}
+    .nav button{justify-content:center}
+    .layout,.summary-grid{grid-template-columns:1fr}
+    .rfq-list{max-height:350px}
+  }
+  @media(max-width:760px){
+    .app{display:block}
+    .sidebar{height:auto;position:relative;border-right:0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+    .brand{padding:0}.brand .txt{display:none}
+    .nav{display:flex;overflow:auto}.nav button span{display:none}
+    main{padding:18px 12px}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .field-grid{grid-template-columns:1fr 1fr}
+    .topbar{display:block}.top-actions{margin-top:12px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">R</div>
+      <div class="txt"><strong>RFQ Pilot</strong><span>Quotation Copilot Prototype</span></div>
+    </div>
+    <nav class="nav">
+      <button class="active" data-screen="inbox">📥 <span>RFQ Inbox</span></button>
+      <button data-screen="workflow">⚙️ <span>Workflow Monitor</span></button>
+      <button data-screen="roi">📊 <span>ROI Dashboard</span></button>
+      <button data-screen="settings">🧩 <span>Rules & Settings</span></button>
+    </nav>
+    <div class="side-note">
+      測試模式<br>
+      全部資料皆為 Mock Data。<br>
+      不會寄出 Email，也不會連接 ERP。
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="screenTitle">RFQ Inbox</h1>
+        <p id="screenDesc">測試從收件、解析、料號匹配、成本檢核到人工核准的完整流程。</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="resetBtn">重設測試資料</button>
+        <button class="btn primary" id="simulateBtn">＋ 模擬新 RFQ</button>
+      </div>
+    </div>
+
+    <section id="inbox" class="screen active">
+      <div class="grid kpis">
+        <div class="card pad metric"><div class="label">今日 RFQ</div><div class="value" id="kpiToday">12</div><div class="sub">較昨日 +3</div></div>
+        <div class="card pad metric"><div class="label">待人工確認</div><div class="value" id="kpiReview">3</div><div class="sub">2 筆含高風險警示</div></div>
+        <div class="card pad metric"><div class="label">平均處理時間</div><div class="value">16m</div><div class="sub">原人工流程約 120m</div></div>
+        <div class="card pad metric"><div class="label">自動料號匹配率</div><div class="value">88%</div><div class="sub">Exact + High Confidence</div></div>
+      </div>
+
+      <div class="grid layout">
+        <div class="card">
+          <div class="section-title"><h2>詢價列表</h2><span class="hint">點擊切換 RFQ</span></div>
+          <div id="rfqList" class="rfq-list"></div>
+        </div>
+
+        <div class="card workspace">
+          <div class="tabs">
+            <button class="tab active" data-tab="overview">詢價摘要</button>
+            <button class="tab" data-tab="items">料號與成本</button>
+            <button class="tab" data-tab="validation">風險檢核</button>
+            <button class="tab" data-tab="quote">報價草稿</button>
+            <button class="tab" data-tab="history">版本紀錄</button>
+          </div>
+
+          <div id="overview" class="tabview active"></div>
+          <div id="items" class="tabview"></div>
+          <div id="validation" class="tabview"></div>
+          <div id="quote" class="tabview"></div>
+          <div id="history" class="tabview"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="screen">
+      <div class="card pad">
+        <div class="section-title" style="padding:0 0 14px;border:0">
+          <h2>Workflow Monitor</h2><span class="hint">驗證流程是否可被配置，而不是寫死</span>
+        </div>
+        <div class="flow" style="margin-bottom:22px">
+          <div class="step done">Email Intake</div><div class="arrow">→</div>
+          <div class="step done">Document Parser</div><div class="arrow">→</div>
+          <div class="step done">LLM Extraction</div><div class="arrow">→</div>
+          <div class="step done">SKU Match</div><div class="arrow">→</div>
+          <div class="step current">ERP Lookup</div><div class="arrow">→</div>
+          <div class="step">Pricing Rules</div><div class="arrow">→</div>
+          <div class="step">Human Review</div><div class="arrow">→</div>
+          <div class="step">Approval</div>
+        </div>
+        <div class="grid summary-grid">
+          <div class="box">
+            <h3>節點執行狀態</h3>
+            <table>
+              <tr><th>節點</th><th>狀態</th><th>耗時</th><th>重試</th></tr>
+              <tr><td>Email Intake</td><td><span class="badge ok">完成</span></td><td>0.4s</td><td>0</td></tr>
+              <tr><td>Excel Parser</td><td><span class="badge ok">完成</span></td><td>0.8s</td><td>0</td></tr>
+              <tr><td>LLM Extraction</td><td><span class="badge ok">完成</span></td><td>2.1s</td><td>0</td></tr>
+              <tr><td>SKU Match</td><td><span class="badge warn">部分人工</span></td><td>0.7s</td><td>0</td></tr>
+              <tr><td>ERP Lookup</td><td><span class="badge info">執行中</span></td><td>—</td><td>1</td></tr>
+            </table>
+          </div>
+          <div class="box">
+            <h3>設計驗證重點</h3>
+            <div class="warning-list">
+              <div class="warning">✓ 每個節點都應可單獨失敗、重試，不影響整份 RFQ。</div>
+              <div class="warning">✓ No Match 只送人工例外處理，不阻塞其他已匹配品項。</div>
+              <div class="warning">✓ 所有 AI Output 都保留 Source、Confidence、Correction Log。</div>
+              <div class="warning">✓ Pricing Rule 與 LLM 解耦，避免模型直接決定價格。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roi" class="screen">
+      <div class="grid kpis">
+        <div class="card pad metric"><div class="label">本月處理 RFQ</div><div class="value">284</div><div class="sub">AI 可完成 261 筆</div></div>
+        <div class="card pad metric"><div class="label">估計節省工時</div><div class="value">431h</div><div class="sub">約 2.7 人月</div></div>
+        <div class="card pad metric"><div class="label">回覆速度改善</div><div class="value">7.5×</div><div class="sub">120m → 16m</div></div>
+        <div class="card pad metric"><div class="label">估計月節省成本</div><div class="value">NT$138k</div><div class="sub">Mock ROI 模型</div></div>
+      </div>
+      <div class="roi-grid">
+        <div class="card pad">
+          <h3 style="margin-top:0">每週 RFQ 處理量</h3>
+          <div class="chart">
+            <div class="col"><div class="column" style="height:45%"></div><span>W1 58</span></div>
+            <div class="col"><div class="column" style="height:63%"></div><span>W2 72</span></div>
+            <div class="col"><div class="column" style="height:72%"></div><span>W3 81</span></div>
+            <div class="col"><div class="column" style="height:65%"></div><span>W4 73</span></div>
+          </div>
+        </div>
+        <div class="card pad">
+          <h3 style="margin-top:0">本月自動化漏斗</h3>
+          <table>
+            <tr><td>收到 RFQ</td><td>284</td><td>100%</td></tr>
+            <tr><td>成功解析</td><td>278</td><td>97.9%</td></tr>
+            <tr><td>料號可匹配</td><td>251</td><td>88.4%</td></tr>
+            <tr><td>無高風險阻擋</td><td>231</td><td>81.3%</td></tr>
+            <tr><td>報價草稿完成</td><td>226</td><td>79.6%</td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings" class="screen">
+      <div class="grid summary-grid">
+        <div class="card pad">
+          <h3 style="margin-top:0">Pricing / Validation Rules</h3>
+          <div class="field-grid">
+            <div class="field"><label>最低毛利率</label><input value="18%" /></div>
+            <div class="field"><label>成本資料最大天數</label><input value="180" /></div>
+            <div class="field"><label>主管核准門檻</label><input value="NT$ 1,000,000" /></div>
+            <div class="field"><label>Exact Match</label><input value="100%" /></div>
+            <div class="field"><label>High Confidence</label><input value="≥ 85%" /></div>
+            <div class="field"><label>Low Confidence</label><input value="< 85%" /></div>
+          </div>
+          <div class="footer-actions"><span class="badge info">Demo：修改不會連接真實後端</span><button class="btn primary" onclick="toast('規則已保存（Mock）')">儲存設定</button></div>
+        </div>
+        <div class="card pad">
+          <h3 style="margin-top:0">必要系統邊界</h3>
+          <div class="warning-list">
+            <div class="warning">LLM 不可直接寫入正式售價；售價必須經 Rule Engine。</div>
+            <div class="warning">成本、庫存、交期必須標示資料來源與更新時間。</div>
+            <div class="warning">AI 低信心結果不可靜默自動通過。</div>
+            <div class="warning danger">正式寄出報價必須有 Human Review / Approval Gate。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const initialData = [
+  {
+    id:"RFQ-2026-0812", customer:"NordWerk GmbH", subject:"RFQ - Stainless Fasteners Rev.B",
+    time:"16:42", status:"review", confidence:94, version:"Rev.B", currency:"USD",
+    incoterm:"FOB Kaohsiung", deadline:"2026-08-10", destination:"Hamburg, Germany",
+    email:`Dear Sales Team,
+
+Please quote item 1, 2 and 4 from the attached BOM.
+Please ignore the previous Rev.A file.
+
+Material must be SUS304 and passivation is required.
+Target delivery: within 3 weeks.
+Term: FOB Kaohsiung.
+
+Best regards,
+Daniel`,
+    attachments:[
+      ["BOM_RevB.xlsx","Excel · 最新版本","ok"],
+      ["drawing_A12345.pdf","PDF · 工程圖","info"],
+      ["BOM_RevA.xlsx","Excel · 舊版，已忽略","danger"]
+    ],
+    items:[
+      {customerPart:"NW-SCR-M6-20",internalPart:"A12345",desc:"Hex Bolt M6×20 SUS304",qty:5000,match:"Exact",conf:100,cost:3.80,price:5.15,stock:8400,moq:1000,lead:"14d",age:32,margin:26.2},
+      {customerPart:"NW-WASH-M6",internalPart:"W66201",desc:"Flat Washer M6 SUS304",qty:5000,match:"Exact",conf:100,cost:0.82,price:1.10,stock:22000,moq:1000,lead:"7d",age:61,margin:25.5},
+      {customerPart:"M6-NUT-SS",internalPart:"N304M6",desc:"Hex Nut M6 SUS304",qty:5000,match:"Fuzzy",conf:91,cost:1.25,price:1.62,stock:3100,moq:2000,lead:"10d",age:207,margin:22.8},
+      {customerPart:"CUSTOM-SPACER-08",internalPart:"—",desc:"Custom spacer Ø8",qty:1200,match:"No Match",conf:41,cost:0,price:0,stock:0,moq:0,lead:"—",age:0,margin:0}
+    ],
+    warnings:[
+      ["danger","CUSTOM-SPACER-08 無法匹配內部料號，必須人工建立或選擇 Mapping。"],
+      ["warn","N304M6 成本資料距今 207 天，超過 180 天門檻；建議重新查採購價。"],
+      ["warn","N304M6 庫存 3,100，低於詢價數量 5,000；交期可能需供應商確認。"],
+      ["info","系統已辨識『Ignore previous Rev.A』，Rev.A BOM 不參與本次報價。"]
+    ],
+    events:[
+      ["16:42","收到 Email 與 3 個附件"],
+      ["16:42","解析 BOM_RevB.xlsx，共 4 個詢價品項"],
+      ["16:43","LLM 擷取 Incoterm = FOB Kaohsiung、Deadline = 2026-08-10"],
+      ["16:43","SKU Match：2 Exact、1 Fuzzy、1 No Match"],
+      ["16:44","Data Quality：發現 2 個警示"],
+      ["16:45","Quotation Draft 已建立，等待人工覆核"]
+    ]
+  },
+  {
+    id:"RFQ-2026-0811", customer:"Atlas Components Ltd.", subject:"Need quotation for A88420 / 10k pcs",
+    time:"15:18", status:"ready", confidence:99, version:"v1", currency:"USD",
+    incoterm:"CIF Rotterdam", deadline:"2026-08-09", destination:"Rotterdam, NL",
+    email:`Hi,
+
+Please quote A88420, 10,000 pcs.
+CIF Rotterdam. Need your best lead time.
+
+Thanks.`,
+    attachments:[["spec_A88420.pdf","PDF · 規格文件","info"]],
+    items:[
+      {customerPart:"A88420",internalPart:"A88420",desc:"Precision Pin Ø4×18",qty:10000,match:"Exact",conf:100,cost:2.10,price:2.88,stock:18000,moq:2000,lead:"12d",age:14,margin:27.1}
+    ],
+    warnings:[["info","所有料號皆為 Exact Match，成本資料新鮮，無阻擋性風險。"]],
+    events:[
+      ["15:18","收到 RFQ"],
+      ["15:19","料號 A88420 Exact Match"],
+      ["15:19","ERP 成本 / 庫存 / MOQ 查詢完成"],
+      ["15:20","Quotation Draft 完成"]
+    ]
+  },
+  {
+    id:"RFQ-2026-0809", customer:"Pioneer Motion Inc.", subject:"Urgent RFQ / revision 3",
+    time:"13:06", status:"approval", confidence:96, version:"Rev.3", currency:"USD",
+    incoterm:"EXW Taichung", deadline:"2026-08-08", destination:"California, USA",
+    email:`Urgent.
+
+Please use revision 3 only.
+Quantities updated to 80,000 pcs.
+Need quote today.
+
+EXW Taichung.`,
+    attachments:[["PM_BOM_R3.xlsx","Excel · Rev.3","ok"],["PM_BOM_R2.xlsx","Excel · 舊版","danger"]],
+    items:[
+      {customerPart:"PM-77A",internalPart:"PM77A",desc:"Machined Collar",qty:80000,match:"Exact",conf:100,cost:8.70,price:10.90,stock:4500,moq:5000,lead:"28d",age:21,margin:20.2}
+    ],
+    warnings:[
+      ["danger","總報價金額超過 NT$1,000,000 等值門檻，需要主管核准。"],
+      ["warn","現有庫存不足，本次交期高度依賴排產。"]
+    ],
+    events:[
+      ["13:06","收到 Revision 3"],
+      ["13:07","Rev.2 自動標記為 superseded"],
+      ["13:08","Quotation Draft 完成"],
+      ["13:09","金額超過核准門檻，送主管 Approval"]
+    ]
+  }
+];
+
+let rfqs = JSON.parse(JSON.stringify(initialData));
+let activeId = rfqs[0].id;
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function money(n){ return Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function statusBadge(s){
+  if(s==="ready") return '<span class="badge ok">可報價</span>';
+  if(s==="approval") return '<span class="badge warn">待主管核准</span>';
+  if(s==="approved") return '<span class="badge ok">已核准</span>';
+  return '<span class="badge danger">待人工確認</span>';
+}
+
+function renderList(){
+  const el=$("#rfqList");
+  el.innerHTML=rfqs.map(r=>`
+    <div class="rfq-item ${r.id===activeId?'active':''}" data-id="${r.id}">
+      <div class="row"><strong>${r.customer}</strong>${statusBadge(r.status)}</div>
+      <p>${r.subject}</p>
+      <div class="row">
+        <span class="badge">${r.id}</span>
+        <span class="badge info">${r.confidence}% confidence</span>
+        <span style="font-size:10px;color:var(--muted)">${r.time}</span>
+      </div>
+    </div>`).join("");
+  $$(".rfq-item").forEach(x=>x.onclick=()=>{activeId=x.dataset.id;renderAll();});
+}
+
+function active(){return rfqs.find(r=>r.id===activeId)}
+
+function renderOverview(r){
+  $("#overview").innerHTML=`
+    <div class="grid summary-grid">
+      <div class="box">
+        <h3>原始 Email</h3>
+        <div class="email">${r.email}</div>
+      </div>
+      <div class="box">
+        <h3>附件與版本判定</h3>
+        <div class="attachments">
+          ${r.attachments.map(a=>`<div class="attachment"><span>${a[0]}<br><small style="color:var(--muted)">${a[1]}</small></span><span class="badge ${a[2]}">${a[2]==='ok'?'使用':a[2]==='danger'?'忽略':'參考'}</span></div>`).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="box" style="margin-top:14px">
+      <div class="row" style="margin-bottom:12px">
+        <h3 style="margin:0">結構化欄位抽取</h3>
+        <span class="badge info">${r.confidence}% Overall Confidence</span>
+      </div>
+      <div class="field-grid">
+        <div class="field"><label>Customer</label><input value="${r.customer}"></div>
+        <div class="field"><label>RFQ ID</label><input value="${r.id}"></div>
+        <div class="field"><label>Revision</label><input value="${r.version}"></div>
+        <div class="field"><label>Currency</label><input value="${r.currency}"></div>
+        <div class="field"><label>Incoterm</label><input value="${r.incoterm}"></div>
+        <div class="field"><label>Quote Deadline</label><input value="${r.deadline}"></div>
+        <div class="field"><label>Destination</label><input value="${r.destination}"></div>
+        <div class="field"><label>Source</label><input value="Email + Attachments"></div>
+        <div class="field"><label>Extraction</label><input value="LLM + deterministic parser"></div>
+      </div>
+    </div>`;
+}
+
+function renderItems(r){
+  $("#items").innerHTML=`
+    <div class="row" style="margin-bottom:12px">
+      <div><strong>料號匹配與 ERP 資料</strong><div style="font-size:11px;color:var(--muted);margin-top:4px">Exact 自動帶入；Fuzzy 顯示信心；No Match 不允許自動報價。</div></div>
+      <button class="btn" onclick="rerunMatch()">重新執行 Match</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>客戶料號</th><th>內部料號</th><th>描述</th><th>Qty</th><th>Match</th><th>Conf.</th><th>Cost</th><th>Price</th><th>Margin</th><th>Stock</th><th>MOQ</th><th>Lead</th></tr></thead>
+        <tbody>${r.items.map((it,i)=>`
+          <tr>
+            <td>${it.customerPart}</td>
+            <td>${it.internalPart}</td>
+            <td>${it.desc}</td>
+            <td>${it.qty.toLocaleString()}</td>
+            <td><span class="badge ${it.match==='Exact'?'ok':it.match==='Fuzzy'?'warn':'danger'}">${it.match}</span></td>
+            <td><div class="confidence"><div class="bar"><i style="width:${it.conf}%"></i></div>${it.conf}%</div></td>
+            <td>${it.cost? '$'+money(it.cost):'—'}</td>
+            <td><input value="${it.price||''}" onchange="updatePrice(${i},this.value)"></td>
+            <td><span class="badge ${it.margin>=18?'ok':'danger'}">${it.margin?it.margin.toFixed(1)+'%':'—'}</span></td>
+            <td>${it.stock.toLocaleString()}</td>
+            <td>${it.moq.toLocaleString()}</td>
+            <td>${it.lead}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <div class="footer-actions">
+      <span class="badge info">ERP Source: Mock ERP · Last sync 4 min ago</span>
+      <button class="btn primary" onclick="toast('ERP 資料已重新整理（Mock）')">Refresh ERP</button>
+    </div>`;
+}
+
+function renderValidation(r){
+  const exact=r.items.filter(x=>x.match==="Exact").length;
+  const fuzzy=r.items.filter(x=>x.match==="Fuzzy").length;
+  const no=r.items.filter(x=>x.match==="No Match").length;
+  $("#validation").innerHTML=`
+    <div class="grid summary-grid">
+      <div class="box">
+        <h3>Validation Summary</h3>
+        <div class="field-grid">
+          <div class="field"><label>Exact Match</label><input value="${exact}"></div>
+          <div class="field"><label>Fuzzy Match</label><input value="${fuzzy}"></div>
+          <div class="field"><label>No Match</label><input value="${no}"></div>
+          <div class="field"><label>Blocking Errors</label><input value="${r.warnings.filter(w=>w[0]==='danger').length}"></div>
+          <div class="field"><label>Warnings</label><input value="${r.warnings.filter(w=>w[0]==='warn').length}"></div>
+          <div class="field"><label>Status</label><input value="${r.status}"></div>
+        </div>
+      </div>
+      <div class="box">
+        <h3>Approval Flow</h3>
+        <div class="flow">
+          <div class="step done">AI Draft</div><div class="arrow">→</div>
+          <div class="step ${r.status==='review'?'current':'done'}">業助覆核</div><div class="arrow">→</div>
+          <div class="step ${r.status==='approval'?'current':r.status==='approved'?'done':''}">主管核准</div><div class="arrow">→</div>
+          <div class="step ${r.status==='approved'?'current':''}">Ready to Send</div>
+        </div>
+      </div>
+    </div>
+    <div class="box" style="margin-top:14px">
+      <h3>風險與資料品質警示</h3>
+      <div class="warning-list">
+        ${r.warnings.map(w=>`<div class="warning ${w[0]==='danger'?'danger':''}"><span class="badge ${w[0]}">${w[0].toUpperCase()}</span> &nbsp; ${w[1]}</div>`).join("")}
+      </div>
+    </div>`;
+}
+
+function quoteTotals(r){
+  const subtotal=r.items.reduce((s,x)=>s+(Number(x.price)||0)*x.qty,0);
+  const freight=r.incoterm.startsWith("CIF")?860:0;
+  return {subtotal,freight,total:subtotal+freight};
+}
+
+function renderQuote(r){
+  const t=quoteTotals(r);
+  const blocked=r.items.some(x=>x.match==="No Match") || r.warnings.some(w=>w[0]==="danger" && r.status!=="approved");
+  $("#quote").innerHTML=`
+    <div class="quote-head">
+      <div><h2>QUOTATION DRAFT</h2><p>${r.customer} · ${r.id} · ${r.version}</p></div>
+      <div class="quote-total"><span>Total</span><strong>${r.currency} ${money(t.total)}</strong><span>${r.incoterm}</span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Part No.</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Amount</th><th>Lead Time</th></tr></thead>
+        <tbody>${r.items.map(it=>`<tr>
+          <td>${it.internalPart}</td><td>${it.desc}</td><td>${it.qty.toLocaleString()}</td>
+          <td>${it.price?'$'+money(it.price):'PENDING'}</td>
+          <td>${it.price?'$'+money(it.price*it.qty):'—'}</td><td>${it.lead}</td>
+        </tr>`).join("")}</tbody>
+        <tfoot><tr><td colspan="4">Subtotal</td><td>${r.currency} ${money(t.subtotal)}</td><td></td></tr>
+        ${t.freight?`<tr><td colspan="4">Estimated Freight</td><td>${r.currency} ${money(t.freight)}</td><td></td></tr>`:""}
+        </tfoot>
+      </table>
+    </div>
+    <div class="box" style="margin-top:14px">
+      <div class="field-grid">
+        <div class="field"><label>Incoterm</label><input value="${r.incoterm}"></div>
+        <div class="field"><label>Payment Term</label><input value="T/T 30 days"></div>
+        <div class="field"><label>Validity</label><input value="30 days"></div>
+      </div>
+    </div>
+    <div class="footer-actions">
+      <div>${blocked?'<span class="badge danger">有阻擋性問題，禁止正式寄出</span>':'<span class="badge ok">Validation Passed</span>'}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="toast('已匯出 Quotation Draft（Mock）')">匯出 Draft</button>
+        ${r.status==="review"?'<button class="btn primary" onclick="reviewApprove()">業助確認</button>':""}
+        ${r.status==="approval"?'<button class="btn primary" onclick="managerApprove()">主管核准</button>':""}
+        ${r.status==="approved"?'<button class="btn ok" onclick="toast(\'測試模式：不會真的寄出 Email\')">Ready to Send</button>':""}
+      </div>
+    </div>`;
+}
+
+function renderHistory(r){
+  $("#history").innerHTML=`
+    <div class="grid summary-grid">
+      <div class="box">
+        <h3>Audit Timeline</h3>
+        <div class="timeline">${r.events.map(e=>`<div class="event"><time>${e[0]}</time><div>${e[1]}</div></div>`).join("")}</div>
+      </div>
+      <div class="box">
+        <h3>Version Tracking</h3>
+        <table>
+          <tr><th>Version</th><th>狀態</th><th>來源</th></tr>
+          <tr><td>${r.version}</td><td><span class="badge ok">Current</span></td><td>Email Thread</td></tr>
+          <tr><td>${r.version.includes("B")?"Rev.A":"Previous"}</td><td><span class="badge danger">Superseded</span></td><td>Previous Attachment</td></tr>
+        </table>
+        <div class="warning" style="margin-top:12px">Audit Log 應記錄：輸入來源、模型輸出、Confidence、人工修正、Pricing Rule、核准人與時間。</div>
+      </div>
+    </div>`;
+}
+
+function renderAll(){
+  const r=active();
+  renderList(); renderOverview(r); renderItems(r); renderValidation(r); renderQuote(r); renderHistory(r);
+}
+
+function updatePrice(i,val){
+  const r=active(), it=r.items[i];
+  it.price=Number(val)||0;
+  it.margin=it.price?((it.price-it.cost)/it.price*100):0;
+  if(it.price && it.price < it.cost){
+    if(!r.warnings.some(w=>w[1].includes(it.customerPart+" 售價低於成本")))
+      r.warnings.unshift(["danger",`${it.customerPart} 售價低於成本，Rule Engine 應直接 Block。`]);
+  }
+  renderValidation(r);renderQuote(r);renderItems(r);
+  toast("價格已更新並重新計算毛利");
+}
+
+function rerunMatch(){
+  const r=active();
+  const nm=r.items.find(x=>x.match==="No Match");
+  if(nm){
+    nm.internalPart="SPC08-120";
+    nm.match="Fuzzy"; nm.conf=88; nm.cost=4.20; nm.price=5.65; nm.stock=1500; nm.moq=1000; nm.lead="18d"; nm.age=45; nm.margin=25.7;
+    r.warnings=r.warnings.filter(w=>!w[1].includes("無法匹配"));
+    r.warnings.unshift(["warn","CUSTOM-SPACER-08 找到 88% 候選 SPC08-120，仍需人工確認 Mapping。"]);
+    toast("重新 Match：找到高信心候選料號");
+    renderAll();
+  } else toast("所有品項已存在候選料號");
+}
+
+function reviewApprove(){
+  const r=active();
+  const block=r.items.some(x=>x.match==="No Match") || r.warnings.some(w=>w[0]==="danger");
+  if(block){toast("仍有阻擋性風險，不能通過人工覆核");return;}
+  const total=quoteTotals(r).total;
+  r.status = total>30000 ? "approval":"approved";
+  r.events.push([new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),"業助完成 Human Review"]);
+  if(r.status==="approval") r.events.push([new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),"依金額門檻送主管核准"]);
+  toast(r.status==="approval"?"已送主管核准":"業助覆核完成，可準備寄出");
+  renderAll();
+}
+
+function managerApprove(){
+  const r=active();
+  r.status="approved";
+  r.events.push([new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),"主管核准完成"]);
+  toast("主管核准完成");
+  renderAll();
+}
+
+function toast(msg){
+  const t=$("#toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(window._toast);window._toast=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+$$(".tab").forEach(btn=>btn.onclick=()=>{
+  $$(".tab").forEach(x=>x.classList.remove("active"));
+  $$(".tabview").forEach(x=>x.classList.remove("active"));
+  btn.classList.add("active");$("#"+btn.dataset.tab).classList.add("active");
+});
+
+const meta={
+  inbox:["RFQ Inbox","測試從收件、解析、料號匹配、成本檢核到人工核准的完整流程。"],
+  workflow:["Workflow Monitor","確認每個節點可以獨立執行、重試與進入人工例外處理。"],
+  roi:["ROI Dashboard","把『比較方便』轉成可量化的續約依據。"],
+  settings:["Rules & Settings","示範 Pricing Rule、Validation Gate 與 Approval Threshold 的產品邊界。"]
+};
+$$(".nav button").forEach(btn=>btn.onclick=()=>{
+  $$(".nav button").forEach(x=>x.classList.remove("active"));btn.classList.add("active");
+  $$(".screen").forEach(x=>x.classList.remove("active"));$("#"+btn.dataset.screen).classList.add("active");
+  $("#screenTitle").textContent=meta[btn.dataset.screen][0];$("#screenDesc").textContent=meta[btn.dataset.screen][1];
+});
+
+$("#resetBtn").onclick=()=>{
+  rfqs=JSON.parse(JSON.stringify(initialData));activeId=rfqs[0].id;renderAll();toast("測試資料已重設");
+};
+
+$("#simulateBtn").onclick=()=>{
+  const n={
+    id:"RFQ-2026-"+String(820+rfqs.length), customer:"Demo Industrial Co.", subject:"New RFQ / 3 items",
+    time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),status:"review",confidence:92,version:"v1",currency:"USD",
+    incoterm:"FOB Kaohsiung",deadline:"2026-08-12",destination:"Singapore",
+    email:"Hello,\n\nPlease quote the attached BOM. Need FOB Kaohsiung and delivery within 20 days.\n\nThanks.",
+    attachments:[["demo_bom.xlsx","Excel · 新詢價","ok"]],
+    items:[
+      {customerPart:"DEMO-001",internalPart:"D001",desc:"Demo Part A",qty:2000,match:"Exact",conf:100,cost:1.8,price:2.45,stock:8000,moq:1000,lead:"10d",age:12,margin:26.5},
+      {customerPart:"DEMO-002",internalPart:"D002",desc:"Demo Part B",qty:5000,match:"Fuzzy",conf:89,cost:3.2,price:4.10,stock:6200,moq:2000,lead:"14d",age:65,margin:22.0},
+      {customerPart:"UNKNOWN-X",internalPart:"—",desc:"Unknown custom part",qty:500,match:"No Match",conf:34,cost:0,price:0,stock:0,moq:0,lead:"—",age:0,margin:0}
+    ],
+    warnings:[["danger","UNKNOWN-X 無法匹配內部料號，需人工處理。"],["warn","DEMO-002 為 Fuzzy Match，需人工確認。"]],
+    events:[["Now","模擬收到新 RFQ"],["Now","自動解析完成"],["Now","SKU Match：1 Exact、1 Fuzzy、1 No Match"]]
+  };
+  rfqs.unshift(n);activeId=n.id;renderAll();toast("已新增一筆模擬 RFQ");
+};
+
+renderAll();
+</script>
+</body>
+</html>
