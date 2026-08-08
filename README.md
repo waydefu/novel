@@ -1,26 +1,24 @@
-# RFQ Pilot｜B2B 詢報價自動化 Agent
+# RFQ Pilot GitHub Pages 專案包 v3
 
-這是可直接放到 GitHub Pages 的專案介紹網站。
+這是 B2B 詢報價自動化 Agent 的 GitHub Pages 版本。
 
-## 檔案
+## 內容
 
-- `index.html`：詳細網頁說明，專有名詞旁邊附白話解釋
-- `RFQ_Pilot_專案簡報.pptx`：簡潔版 PPT，可編輯
-- `RFQ_Pilot_專案簡報.pdf`：給網頁內嵌預覽用
-- `demo.html`：保留上一版可操作 Demo
-- `.nojekyll`：避免 GitHub Pages 處理靜態檔案出問題
+- `index.html`：詳細專案說明網頁，包含功能、技術選項、MVP、時程、人力、Demo、PPT 預覽。
+- `demo.html`：直覺操作版互動 Demo，6 步驟導覽。
+- `RFQ_Pilot_專案簡報.pptx`：簡潔 PPT。
+- `RFQ_Pilot_專案簡報.pdf`：給網頁內嵌預覽用。
+- `.nojekyll`：避免 GitHub Pages 處理問題。
 
-## 上傳方式
+## 使用方法
 
-1. 建立一個 GitHub repository。
-2. 把本資料夾所有檔案放到 repository 根目錄。
-3. 到 Settings → Pages。
-4. Source 選 `Deploy from a branch`。
-5. Branch 選 `main`，資料夾選 `/root`。
-6. 等待 GitHub Pages 產生網址。
+1. 把這個資料夾內容放到 GitHub repo 根目錄。
+2. 到 Settings → Pages。
+3. Source 選 Deploy from a branch。
+4. Branch 選 main / root。
+5. 等待 GitHub Pages 產生網址。
 
-## 內容定位
+## 說明
 
-網頁：詳細說明，適合交給下一位工程師或評審看。  
-PPT：簡潔版，適合上台簡報。  
-Demo：保留互動流程，方便展示產品長什麼樣。
+網頁故意寫得比 PPT 詳細，因為工程師與非技術主管都可以直接看網頁理解專案。
+PPT 保持簡短，適合 5–8 分鐘簡報。

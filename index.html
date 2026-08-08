@@ -1,184 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RFQ Pilot｜B2B 詢報價自動化 Agent</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RFQ Pilot｜B2B 詢報價自動化 Agent 專案說明</title>
 <style>
-:root{
-  --bg:#f6f8fb;--card:#fff;--text:#172033;--muted:#69778a;--line:#dfe6ef;
-  --blue:#3478f6;--blue2:#eaf2ff;--green:#23996b;--green2:#eaf8f2;--red:#d95060;--red2:#fff0f2;
-  --yellow:#a96f0a;--yellow2:#fff7df;--dark:#101c2f;--shadow:0 16px 42px rgba(29,45,75,.08)
-}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;line-height:1.75}a{color:inherit}b{color:#101a2c}.term{font-weight:800}.term small{font-weight:500;color:var(--muted)}
-nav{position:sticky;top:0;z-index:30;background:rgba(246,248,251,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}nav .inner{max-width:1180px;margin:auto;padding:10px 20px;display:flex;gap:6px;overflow:auto}nav a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:12px;padding:6px 8px;border-radius:8px}nav a:hover{background:var(--blue2);color:var(--blue)}
-.wrap{max-width:1180px;margin:auto;padding:30px 20px 80px}.hero{padding:44px 0 24px}.tag{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:999px;background:var(--blue2);color:var(--blue);font-size:12px;font-weight:850}.hero h1{font-size:clamp(34px,6vw,62px);line-height:1.06;margin:16px 0 16px}.hero p{font-size:18px;color:var(--muted);max-width:960px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fff;text-decoration:none;font-weight:800;font-size:13px}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn.green{background:var(--green);border-color:var(--green);color:white}
-.kpis,.grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(4,1fr);margin-top:28px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}.kpi b{font-size:27px;display:block;margin:4px 0}.kpi span{font-size:12px;color:var(--muted)}section{padding:34px 0;scroll-margin-top:62px}.head{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}.no{width:36px;height:36px;display:grid;place-items:center;flex:0 0 auto;border-radius:11px;background:var(--blue2);color:var(--blue);font-weight:900;font-size:12px}h2{font-size:28px;margin:0 0 5px}.lead{margin:0;color:var(--muted);max-width:960px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.card h3{margin:0 0 8px;font-size:16px}.card p,.card li{font-size:14px;color:var(--muted);margin-top:0}.card ul{margin:8px 0 0;padding-left:19px}.good{background:var(--green2);border-color:#ccebdd}.bad{background:var(--red2);border-color:#ffd1d7}.info{background:var(--blue2);border-color:#cfe0ff}.warn{background:var(--yellow2);border-color:#ffe7a8}.dark{background:var(--dark);color:white;border-color:var(--dark)}.dark p,.dark li{color:#cbd8ea}.pill{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:4px 8px;background:#fff;color:var(--muted);font-size:12px;margin:3px}.definition{display:grid;grid-template-columns:180px 1fr;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:white}.definition div{padding:12px;border-bottom:1px solid var(--line)}.definition div:nth-child(odd){background:#f9fbfe;font-weight:900}.definition div:nth-child(even){color:var(--muted)}.flow{display:flex;align-items:center;gap:8px;overflow:auto;padding:16px;border:1px solid var(--line);border-radius:16px;background:white}.node{min-width:130px;text-align:center;padding:12px;border-radius:12px;border:1px solid var(--line);background:#fff}.node b{display:block;font-size:13px}.node span{font-size:11px;color:var(--muted)}.arrow{color:#8da0bb;font-weight:900}.split{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.timeline{display:grid;gap:10px}.phase{display:grid;grid-template-columns:86px 1.1fr 1.8fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:white}.phase div{padding:11px;border-right:1px solid var(--line);font-size:13px}.phase div:last-child{border-right:0;color:var(--muted)}.phase b{color:var(--blue)}.gantt{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;overflow:auto}.gantt-grid{min-width:720px}.weeks{display:grid;grid-template-columns:150px repeat(12,1fr);gap:6px;align-items:center}.weeks div{font-size:11px;color:var(--muted);text-align:center}.bar-row{display:grid;grid-template-columns:150px repeat(12,1fr);gap:6px;align-items:center;margin-top:8px}.bar-row label{font-size:13px;font-weight:800}.bar{height:24px;border-radius:999px}.blue{background:var(--blue)}.green{background:var(--green)}.red{background:var(--red)}.yellow{background:var(--yellow)}.empty{height:1px}.table{overflow:auto;border:1px solid var(--line);border-radius:16px;background:white}table{width:100%;border-collapse:collapse;min-width:780px}th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px}th{background:#f9fbfe;color:var(--muted);font-size:11px;text-transform:uppercase}td{color:#526176}.embed{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:white;box-shadow:var(--shadow)}.embed-head{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.embed-head b{font-size:15px}.embed-head span{font-size:12px;color:var(--muted)}iframe{width:100%;border:0;display:block}.ppt-frame{height:720px;background:#f0f3f8}.demo-frame{height:860px;background:#08101d}.note{padding:14px;border-left:4px solid var(--blue);background:var(--blue2);border-radius:10px;color:#40516a}.problem{display:grid;grid-template-columns:220px 1fr;gap:12px;align-items:stretch}.problem .left{font-weight:900}.problem .right{color:var(--muted)}footer{padding-top:36px;color:var(--muted);font-size:12px}
-@media(max-width:850px){.kpis,.g2,.g3,.g4,.split{grid-template-columns:1fr}.problem,.definition{grid-template-columns:1fr}.definition div:nth-child(odd){border-bottom:0}.phase{grid-template-columns:1fr}.phase div{border-right:0;border-bottom:1px solid var(--line)}.ppt-frame{height:520px}.demo-frame{height:760px}.hero p{font-size:16px}}
+:root{--bg:#f6f8fc;--ink:#142033;--muted:#68758b;--panel:#fff;--line:#dde5ef;--blue:#246bfe;--dark:#0d1b2f;--green:#18a058;--yellow:#b97900;--red:#d63b49;--soft:#eef4ff;--shadow:0 18px 45px rgba(20,37,65,.10)}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--ink)} a{color:inherit} .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh} aside{position:sticky;top:0;height:100vh;background:#0c1728;color:white;padding:20px 14px;overflow:auto} .brand{display:flex;gap:10px;align-items:center;margin:4px 8px 20px} .logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#6aa5ff,#9d84ff);display:grid;place-items:center;font-weight:900;color:#06111f} .brand b{display:block} .brand small{color:#9fb1ca} nav{display:grid;gap:5px} nav a{text-decoration:none;color:#aebbd0;border-radius:10px;padding:9px 10px;font-size:13px} nav a:hover{background:#172842;color:white} main{padding:32px min(5vw,72px) 70px} .container{max-width:1240px;margin:auto} .hero{padding:22px 0 12px} .tag{display:inline-flex;background:#eaf1ff;color:#235ed2;border:1px solid #cfe0ff;border-radius:999px;padding:6px 10px;font-weight:800;font-size:12px} h1{font-size:clamp(34px,5vw,58px);line-height:1.05;margin:14px 0} .hero p{font-size:18px;line-height:1.75;color:var(--muted);max-width:960px} .hero strong{color:var(--ink)} .buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px} .btn{display:inline-block;text-decoration:none;border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 14px;border-radius:12px;font-weight:800;font-size:14px} .btn.primary{background:var(--blue);border-color:var(--blue);color:white} .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0} .metric{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)} .metric small{color:var(--muted);font-size:12px} .metric b{display:block;font-size:28px;margin:6px 0 2px} section{padding:34px 0;scroll-margin-top:10px} .head{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px} .num{width:36px;height:36px;border-radius:12px;background:#0d1b2f;color:white;display:grid;place-items:center;font-weight:900} h2{font-size:28px;margin:0 0 6px} .lead{margin:0;color:var(--muted);line-height:1.7;max-width:920px} .grid{display:grid;gap:14px} .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .card{background:white;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)} .card h3{margin:0 0 8px;font-size:18px} .card p,.card li{color:var(--muted);line-height:1.65} .card ul{padding-left:20px;margin:8px 0 0} .callout{background:#fff9e8;border:1px solid #ffe4aa;border-left:5px solid #ffc552;border-radius:14px;padding:14px 16px;color:#5a4200;line-height:1.7;margin-top:14px} .flow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:stretch} .flow div{background:white;border:1px solid var(--line);border-radius:14px;padding:13px;text-align:center;box-shadow:var(--shadow)} .flow b{display:block;margin-bottom:5px} .flow small{color:var(--muted);font-size:12px;line-height:1.4} .tech-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px} .tech-card{background:white;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden} .tech-head{padding:16px 18px;background:#fbfcff;border-bottom:1px solid var(--line)} .tech-head h3{margin:0 0 5px;font-size:18px} .tech-head p{margin:0;color:var(--muted);line-height:1.55} .tech-card ol{margin:0;padding:4px 18px 16px 36px} .tech-card li{padding:10px 0;border-bottom:1px solid #edf1f7;color:var(--muted);line-height:1.55} .tech-card li:last-child{border-bottom:0} .tech-card li b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px} .tech-card li span{font-size:13px} table{width:100%;border-collapse:collapse;background:white;border-radius:16px;overflow:hidden;box-shadow:var(--shadow)} th,td{padding:13px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top} th{background:#f8fafc;color:#5d6b80;font-size:13px} td{color:#344154;line-height:1.55} .badge{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800} .ok{background:#ecfff5;color:#0d7a42} .warn{background:#fff7e4;color:#916200} .bad{background:#fff0f2;color:#c82f3e} .demo-box{background:white;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden} .demo-top{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#0d1b2f;color:white;padding:13px 16px} iframe{width:100%;height:860px;border:0;background:white} .ppt{display:grid;grid-template-columns:1fr 300px;gap:14px} .ppt iframe{height:620px;border-radius:16px;border:1px solid var(--line)} .mini{font-size:13px;color:var(--muted);line-height:1.65} .quote{font-size:20px;font-weight:900;line-height:1.45} .foot{color:var(--muted);font-size:12px;line-height:1.7} @media(max-width:1050px){.layout{grid-template-columns:1fr} aside{position:relative;height:auto} nav{display:flex;overflow:auto} nav a{white-space:nowrap} .metrics,.g3,.tech-grid,.flow,.ppt{grid-template-columns:1fr 1fr}} @media(max-width:720px){main{padding:22px 14px 50px} .metrics,.g2,.g3,.tech-grid,.flow,.ppt{grid-template-columns:1fr} iframe{height:760px}}
 </style>
 </head>
 <body>
-<nav><div class="inner">
-  <a href="#position">定位</a><a href="#pain">痛點</a><a href="#customer">客戶群</a><a href="#solution">如何解決</a><a href="#flow">操作流程</a><a href="#mvp">MVP</a><a href="#vision">願景</a><a href="#business">商業模式</a><a href="#work">工作拆分</a><a href="#timeline">時程</a><a href="#charts">流程圖 / 甘特圖 / 人力</a><a href="#ppt">PPT</a><a href="#demo">Demo</a>
-</div></nav>
-<main class="wrap">
-<header class="hero">
-  <span class="tag">RFQ Pilot｜給工程師與提案對象看的詳細版</span>
-  <h1>B2B 詢報價自動化 Agent</h1>
-  <p>一句話：這是一個幫貿易商、零件廠把國外客戶的詢價信與附件，自動整理成「可確認的報價草稿」的 AI 工具。</p>
-  <p>它不是要讓 AI 自己亂報價，而是讓 AI 先幫忙讀信、整理 BOM、找料號、查公司資料、套規則，最後再由人確認。</p>
-  <div class="actions"><a class="btn primary" href="#ppt">看簡潔 PPT</a><a class="btn green" href="#demo">操作 Demo</a><a class="btn" href="RFQ_Pilot_專案簡報.pptx" download>下載 PPTX</a></div>
-  <div class="kpis">
-    <div class="card kpi"><span>目標處理時間</span><b>10–20 分鐘</b><span>原本常常要 1–3 小時</span></div>
-    <div class="card kpi"><span>第一版範圍</span><b>Email + Excel</b><span>先不碰 CAD 與圖片辨識</span></div>
-    <div class="card kpi"><span>產品角色</span><b>AI 副駕</b><span>AI 出草稿，人負責確認</span></div>
-    <div class="card kpi"><span>商業模式</span><b>SaaS 月費</b><span>加導入費與用量費</span></div>
-  </div>
-</header>
-
-<section id="terms"><div class="head"><div class="no">0</div><div><h2>先把名詞講清楚</h2><p class="lead">下面這些名詞在網頁與 PPT 都會出現，旁邊都用白話解釋。</p></div></div>
-  <div class="definition">
-    <div>RFQ</div><div>Request for Quotation，詢價需求。客戶問：「這些東西多少錢？多久交？」</div>
-    <div>BOM</div><div>Bill of Materials，物料清單。通常是 Excel，列出料號、規格、數量。</div>
-    <div>ERP</div><div>企業資源管理系統。公司用來管理料號、成本、庫存、供應商、訂單的系統。</div>
-    <div>LLM</div><div>大型語言模型。像 ChatGPT / Claude 這類能讀懂文字、整理資訊的 AI。</div>
-    <div>Agent</div><div>AI 助手。不只是聊天，而是能照流程做事，例如讀信、查資料、產生草稿。</div>
-    <div>MVP</div><div>最小可行產品。第一版只做最核心功能，用來驗證客戶是否真的需要。</div>
-    <div>Rule Engine</div><div>規則引擎。負責套用固定規則，例如最低毛利、成本過期警告、高金額要主管核准。</div>
-    <div>ROI</div><div>投資報酬率。老闆最在意：花這筆錢，能省多少工時、提高多少效率。</div>
-  </div>
-</section>
-
-<section id="position"><div class="head"><div class="no">1</div><div><h2>定位：一句話說清楚產品是什麼</h2><p class="lead">RFQ Pilot 是「業助的 AI 詢報價副駕」。</p></div></div>
-  <div class="grid g3">
-    <div class="card info"><h3>它做什麼？</h3><p>把英文詢價信、Excel BOM、PDF 附件，整理成可報價的資料表與報價草稿。</p></div>
-    <div class="card good"><h3>它不做什麼？</h3><p>不讓 AI 直接決定最後價格，也不直接寄出正式報價。</p></div>
-    <div class="card"><h3>誰來負責最後一步？</h3><p>業助或主管確認。AI 只是先把資料整理好，讓人不用從零開始。</p></div>
-  </div>
-</section>
-
-<section id="pain"><div class="head"><div class="no">2</div><div><h2>痛點：為什麼市場需要它</h2><p class="lead">很多公司每天都在處理 RFQ，但大多數工作其實是重複整理資料。</p></div></div>
-  <div class="grid g3">
-    <div class="card bad"><h3>很花時間</h3><p>一封 RFQ 可能有信件、PDF、Excel、圖片。業助要一個一個打開，手動整理。</p></div>
-    <div class="card warn"><h3>很多不成交</h3><p>大量詢價最後不一定成交，但每一筆都要花時間整理，成本很高。</p></div>
-    <div class="card bad"><h3>新人難上手</h3><p>料號、客戶習慣、報價規則都靠經驗，新人很難快速接手。</p></div>
-  </div>
-  <p class="note">最核心的痛點不是「不會做報價」，而是「每次報價前都要先花很多時間整理資料」。</p>
-</section>
-
-<section id="customer"><div class="head"><div class="no">3</div><div><h2>客戶群：誰最痛</h2><p class="lead">不是所有公司都適合第一波導入。最適合的是 RFQ 數量多、料號重複率高、已有成本資料的公司。</p></div></div>
-  <div class="grid g2">
-    <div class="card good"><h3>最適合客戶</h3><ul><li>出口貿易商</li><li>扣件、五金、電子零件、模具、CNC 零件廠</li><li>有 3–15 名業助</li><li>每週收到大量英文 RFQ</li><li>有 Excel / ERP 成本與料號資料</li></ul></div>
-    <div class="card"><h3>第一波切入建議</h3><p>先選一個垂直產業，例如扣件或標準五金。因為規格重複率高，料號比對比較容易做準。</p><p>不要一開始就說要支援所有產業，不然很快會變成客製專案。</p></div>
-  </div>
-</section>
-
-<section id="solution"><div class="head"><div class="no">4</div><div><h2>如何解決：產品解決了什麼問題</h2><p class="lead">用 AI 處理「讀懂與整理」，用 ERP 處理「真實資料」，用規則引擎處理「商業規則」。</p></div></div>
-  <div class="flow">
-    <div class="node"><b>Email</b><span>詢價信</span></div><div class="arrow">→</div>
-    <div class="node"><b>Excel BOM</b><span>物料清單</span></div><div class="arrow">→</div>
-    <div class="node"><b>LLM</b><span>AI 讀懂內容</span></div><div class="arrow">→</div>
-    <div class="node"><b>SKU Match</b><span>料號比對</span></div><div class="arrow">→</div>
-    <div class="node"><b>ERP</b><span>查成本庫存</span></div><div class="arrow">→</div>
-    <div class="node"><b>Rules</b><span>報價規則</span></div><div class="arrow">→</div>
-    <div class="node"><b>Draft</b><span>報價草稿</span></div><div class="arrow">→</div>
-    <div class="node"><b>Review</b><span>人工確認</span></div>
-  </div>
-  <div class="grid g3" style="margin-top:14px">
-    <div class="card info"><h3>AI 負責</h3><p>讀信、看附件、抽出客戶、料號、數量、交期、幣別、特殊需求。</p></div>
-    <div class="card good"><h3>資料庫 / ERP 負責</h3><p>提供正確的料號、成本、庫存、MOQ、交期、歷史價格。</p></div>
-    <div class="card warn"><h3>規則引擎負責</h3><p>檢查低於成本、毛利太低、成本過期、高金額需主管核准。</p></div>
-  </div>
-</section>
-
-<section id="flow"><div class="head"><div class="no">5</div><div><h2>操作流程：使用者如何使用</h2><p class="lead">流程要像業助平常工作，只是多了一個會先整理資料的 AI。</p></div></div>
-  <div class="timeline">
-    <div class="phase"><div><b>Step 1</b></div><div>收到詢價</div><div>系統讀取 Email 與附件，判斷哪個檔案是最新版本。</div></div>
-    <div class="phase"><div><b>Step 2</b></div><div>AI 整理</div><div>抽出客戶、料號、數量、幣別、交期、付款條件、Incoterms（國際貿易條件）。</div></div>
-    <div class="phase"><div><b>Step 3</b></div><div>料號比對</div><div>Exact Match（完全符合）自動帶入；Fuzzy Match（相似）讓人確認；No Match（找不到）送人工。</div></div>
-    <div class="phase"><div><b>Step 4</b></div><div>查公司資料</div><div>從 ERP 或資料庫查成本、庫存、MOQ、交期、歷史報價。</div></div>
-    <div class="phase"><div><b>Step 5</b></div><div>產生草稿</div><div>套用報價規則，產生 Quotation Draft（報價草稿）。</div></div>
-    <div class="phase"><div><b>Step 6</b></div><div>人工確認</div><div>業助確認；若金額高或風險高，送主管核准。</div></div>
-  </div>
-</section>
-
-<section id="mvp"><div class="head"><div class="no">6</div><div><h2>最小 MVP：第一版只做什麼</h2><p class="lead">第一版不要貪心。只做最容易驗證商業價值的部分。</p></div></div>
-  <div class="grid g3">
-    <div class="card good"><h3>第一版要做</h3><ul><li>Email + Excel BOM</li><li>基本文字 PDF</li><li>結構化 RFQ 資料</li><li>料號 Exact / Fuzzy / No Match</li><li>查成本、庫存、MOQ、交期</li><li>報價草稿 + 人工覆核</li><li>ROI Dashboard</li></ul></div>
-    <div class="card bad"><h3>第一版不做</h3><ul><li>CAD 工程圖全面辨識</li><li>手機照片高可靠辨識</li><li>所有 ERP 一次支援</li><li>全自動正式寄價</li><li>所有產業一次支援</li></ul></div>
-    <div class="card info"><h3>MVP 成功標準</h3><ul><li>平均處理時間 ≤20 分鐘</li><li>欄位抽取準確率 ≥95%</li><li>料號匹配率 ≥80–90%</li><li>錯價能被系統擋下</li><li>老闆看得到省工時</li></ul></div>
-  </div>
-</section>
-
-<section id="vision"><div class="head"><div class="no">7</div><div><h2>產品願景：未來幾年會變成什麼</h2><p class="lead">從「詢價整理助手」變成「製造業報價作業平台」。</p></div></div>
-  <div class="grid g4">
-    <div class="card"><h3>Year 1</h3><p>單一產業 MVP，先支援 Email + Excel。</p></div>
-    <div class="card"><h3>Year 2</h3><p>串更多 ERP，累積料號與報價資料。</p></div>
-    <div class="card"><h3>Year 3</h3><p>擴到更多產業，例如模具、電子零件、五金。</p></div>
-    <div class="card"><h3>Year 4–5</h3><p>變成全球製造業可用的 RFQ Workflow Platform（詢報價工作流平台）。</p></div>
-  </div>
-  <p class="note">長期護城河不是 Prompt，而是料號 Mapping、歷史報價、人工修正資料、產業流程模板與 ERP Connector。</p>
-</section>
-
-<section id="business"><div class="head"><div class="no">8</div><div><h2>商業模式：怎麼盈利</h2><p class="lead">用月費創造穩定收入，用導入費處理資料與串接。</p></div></div>
-  <div class="grid g3">
-    <div class="card"><h3>Starter</h3><p>NT$15,000 / 月<br>約 100 筆 RFQ<br>適合小型貿易商。</p></div>
-    <div class="card info"><h3>Professional</h3><p>NT$35,000 / 月<br>約 500 筆 RFQ<br>適合有多名業助的公司。</p></div>
-    <div class="card"><h3>Enterprise</h3><p>客製報價<br>ERP 串接、權限、私有部署、SLA（服務保證）。</p></div>
-  </div>
-  <div class="grid g2" style="margin-top:14px"><div class="card good"><h3>其他收入</h3><p>導入費、資料清理費、ERP 串接費、超量使用費、客製 Workflow。</p></div><div class="card"><h3>賣點</h3><p>不是賣「AI 很酷」，而是賣「每月省多少工時、報價速度快多少」。</p></div></div>
-</section>
-
-<section id="work"><div class="head"><div class="no">9</div><div><h2>工作拆分：有哪些工作</h2><p class="lead">這個專案不能只做 UI。真正重要的是資料、流程、規則與測試。</p></div></div>
-  <div class="table"><table><thead><tr><th>工作線</th><th>要做什麼</th><th>產出</th></tr></thead><tbody>
-    <tr><td>產品 / 產業</td><td>訪談客戶、收集 RFQ、確認報價流程</td><td>需求文件、流程規則</td></tr>
-    <tr><td>資料 / ERP</td><td>整理料號表、成本表、庫存、歷史報價</td><td>Canonical Data Model（統一資料格式）</td></tr>
-    <tr><td>AI / Parser</td><td>解析 Email、Excel、PDF，抽出欄位</td><td>RFQ JSON（結構化詢價資料）</td></tr>
-    <tr><td>後端 / Workflow</td><td>狀態機、Validation、Pricing API</td><td>可追溯工作流</td></tr>
-    <tr><td>前端 / UX</td><td>Inbox、料號確認、報價草稿、Dashboard</td><td>業助可操作介面</td></tr>
-    <tr><td>測試 / 導入</td><td>用真實 RFQ 測試，修正錯誤，教客戶使用</td><td>Pilot 可用版本</td></tr>
-  </tbody></table></div>
-</section>
-
-<section id="timeline"><div class="head"><div class="no">10</div><div><h2>專案時程：12 週 MVP</h2><p class="lead">12 週做出可以給 3–5 家客戶試用的版本。</p></div></div>
-  <div class="timeline">
-    <div class="phase"><div><b>Week 1–2</b></div><div>需求與資料收集</div><div>收集真實 RFQ、料號表、成本資料，確認第一個產業流程。</div></div>
-    <div class="phase"><div><b>Week 3–4</b></div><div>Parser + 資料模型</div><div>完成 Email / Excel 解析與 RFQ JSON 格式。</div></div>
-    <div class="phase"><div><b>Week 5–6</b></div><div>料號與 ERP</div><div>完成料號匹配與成本、庫存、MOQ、交期查詢。</div></div>
-    <div class="phase"><div><b>Week 7–8</b></div><div>報價草稿</div><div>完成規則引擎、毛利檢查、Quotation Draft。</div></div>
-    <div class="phase"><div><b>Week 9–10</b></div><div>人工覆核與 Dashboard</div><div>完成業助確認、主管核准、ROI Dashboard。</div></div>
-    <div class="phase"><div><b>Week 11–12</b></div><div>Pilot 測試</div><div>用真實 RFQ 測試，修正錯誤，準備試用。</div></div>
-  </div>
-</section>
-
-<section id="charts"><div class="head"><div class="no">11</div><div><h2>流程圖、甘特圖、人力配置圖</h2><p class="lead">這三張圖是給工程師與簡報對象快速理解專案。</p></div></div>
-  <h3>流程圖</h3>
-  <div class="flow"><div class="node"><b>收 RFQ</b><span>Email / BOM</span></div><div class="arrow">→</div><div class="node"><b>AI 解析</b><span>抽欄位</span></div><div class="arrow">→</div><div class="node"><b>料號比對</b><span>Exact / Fuzzy / No Match</span></div><div class="arrow">→</div><div class="node"><b>查 ERP</b><span>成本 / 庫存</span></div><div class="arrow">→</div><div class="node"><b>套規則</b><span>毛利 / 風險</span></div><div class="arrow">→</div><div class="node"><b>草稿</b><span>Quotation Draft</span></div><div class="arrow">→</div><div class="node"><b>人確認</b><span>寄出前 Gate</span></div></div>
-  <h3 style="margin-top:24px">甘特圖</h3>
-  <div class="gantt"><div class="gantt-grid">
-    <div class="weeks"><div></div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div><div>11</div><div>12</div></div>
-    <div class="bar-row"><label>需求訪談</label><div class="bar blue" style="grid-column:2/4"></div></div>
-    <div class="bar-row"><label>資料整理</label><div class="bar green" style="grid-column:2/5"></div></div>
-    <div class="bar-row"><label>Parser / AI</label><div class="bar blue" style="grid-column:3/8"></div></div>
-    <div class="bar-row"><label>ERP / DB</label><div class="bar green" style="grid-column:4/9"></div></div>
-    <div class="bar-row"><label>前端 UI</label><div class="bar blue" style="grid-column:5/10"></div></div>
-    <div class="bar-row"><label>Rules / Workflow</label><div class="bar yellow" style="grid-column:7/11"></div></div>
-    <div class="bar-row"><label>測試修正</label><div class="bar red" style="grid-column:10/12"></div></div>
-    <div class="bar-row"><label>Pilot 上線</label><div class="bar green" style="grid-column:12/14"></div></div>
-  </div></div>
-  <h3 style="margin-top:24px">產品開發人力配置圖</h3>
-  <div class="grid g4"><div class="card info"><h3>AI / Backend</h3><p>1 人<br>Parser、LLM、DB、API、Workflow。</p></div><div class="card"><h3>Frontend</h3><p>1 人<br>Inbox、報價草稿、ROI Dashboard。</p></div><div class="card good"><h3>PM / 產業顧問</h3><p>0.5–1 人<br>訪談、流程、RFQ 樣本、驗收。</p></div><div class="card warn"><h3>QA / 導入</h3><p>0.5 人<br>第 8 週後加入，測試與教學。</p></div></div>
-</section>
-
-<section id="ppt"><div class="head"><div class="no">12</div><div><h2>PPT 簡潔版</h2><p class="lead">PPT 保持少字，適合簡報；詳細說明放在這個網頁。</p></div></div>
-  <div class="embed"><div class="embed-head"><div><b>RFQ Pilot 專案簡報 PDF 預覽</b><br><span>瀏覽器不一定能直接嵌入 PPTX，所以這裡用 PDF 預覽，旁邊可下載 PPTX。</span></div><a class="btn primary" href="RFQ_Pilot_專案簡報.pptx" download>下載可編輯 PPTX</a></div><iframe class="ppt-frame" src="RFQ_Pilot_專案簡報.pdf#toolbar=0"></iframe></div>
-</section>
-
-<section id="demo"><div class="head"><div class="no">13</div><div><h2>Demo 保留：可操作 RFQ Pilot</h2><p class="lead">下面保留上一版互動 Demo，可測 RFQ Inbox、料號匹配、風險檢核、報價草稿與主管核准。</p></div></div>
-  <div class="embed"><div class="embed-head"><div><b>互動 Demo</b><br><span>純前端 Mock Data，不連真實 Email / ERP。</span></div><a class="btn" href="demo.html" target="_blank">新分頁開啟 Demo</a></div><iframe class="demo-frame" src="demo.html"></iframe></div>
-</section>
-
-<footer>RFQ Pilot GitHub Pages 版｜網頁詳細說明、PPT 簡潔簡報、Demo 保留。</footer>
-</main>
-</body>
-</html>
+<div class="layout">
+<aside><div class="brand"><div class="logo">R</div><div><b>RFQ Pilot</b><small>專案說明 v3</small></div></div><nav><a href="#position">定位</a><a href="#pain">痛點</a><a href="#solution">解法</a><a href="#features">功能</a><a href="#tech">2026 技術選項</a><a href="#mvp">MVP</a><a href="#plan">時程</a><a href="#team">人力</a><a href="#demo">Demo</a><a href="#ppt">PPT</a></nav></aside>
+<main><div class="container">
+<header class="hero" id="position"><span class="tag">B2B 詢報價自動化 Agent（像業助的 AI 副駕）</span><h1>把混亂的國外詢價信，自動整理成可確認的報價草稿。</h1><p><strong>一句話：</strong>RFQ Pilot 是給貿易商、零件廠、模具廠用的 AI 工具，幫業助讀 Email、拆 BOM（物料清單）、查料號、查成本、做報價草稿，最後仍由人確認。</p><div class="buttons"><a class="btn primary" href="#demo">先看直覺 Demo</a><a class="btn" href="RFQ_Pilot_專案簡報.pptx">下載簡潔 PPT</a></div></header>
+<div class="metrics"><div class="metric"><small>原本一筆 RFQ</small><b>1–3 小時</b><small>人工讀信、查料、做表</small></div><div class="metric"><small>目標處理時間</small><b>10–20 分</b><small>AI 先整理，人只確認</small></div><div class="metric"><small>MVP 範圍</small><b>Email + Excel</b><small>先不碰 CAD / 圖片辨識</small></div><div class="metric"><small>產品定位</small><b>AI 副駕</b><small>不是取代業助</small></div></div>
+<section id="pain"><div class="head"><div class="num">01</div><div><h2>市場痛點：為什麼需要它？</h2><p class="lead">業助每天都在做重複整理，而且大量詢價最後不會成交。最浪費的是「低成交率的前置整理工」。</p></div></div><div class="grid g3"><div class="card"><h3>資料很亂</h3><p>客戶可能寄 Email、PDF、Excel、照片，還會在信中補一句「只報第 3、5 項」。</p></div><div class="card"><h3>查料很花時間</h3><p>客戶料號不一定等於公司料號，業助要翻舊報價、料號表、ERP。</p></div><div class="card"><h3>報錯很危險</h3><p>價格錯一個 0 就可能虧錢，所以 AI 不能直接寄正式報價，必須保留人工確認。</p></div></div></section>
+<section id="solution"><div class="head"><div class="num">02</div><div><h2>產品如何解決？</h2><p class="lead">把 RFQ 處理拆成幾個安全步驟：AI 讀懂內容，資料庫提供真實資料，規則引擎擋風險，人做最後確認。</p></div></div><div class="flow"><div><b>收信</b><small>Email / 附件進來</small></div><div><b>讀文件</b><small>OCR / Excel Parser</small></div><div><b>抽欄位</b><small>客戶、數量、交期</small></div><div><b>查料號</b><small>Exact / Fuzzy / No Match</small></div><div><b>查 ERP</b><small>成本、庫存、交期</small></div><div><b>套規則</b><small>毛利、風險、核准</small></div><div><b>人確認</b><small>報價草稿完成</small></div></div><div class="callout"><b>比喻：</b>LLM（大型語言模型）像讀信助理；ERP（企業內部系統）像倉庫帳本；Rule Engine（規則引擎）像公司的報價守門員。</div></section>
+<section id="features"><div class="head"><div class="num">03</div><div><h2>完整產品功能</h2><p class="lead">正式產品不只是「AI 讀文件」，而是一整套 RFQ 工作系統。</p></div></div><div class="grid g3"><div class="card"><h3>RFQ Inbox</h3><p>集中管理詢價信、附件、客戶、狀態，不再散落在每個人的信箱。</p></div><div class="card"><h3>文件解析</h3><p>讀 Email、Excel BOM、PDF，把混亂文件轉成乾淨表格。</p></div><div class="card"><h3>料號匹配</h3><p>分成 Exact（精準）、Fuzzy（相似）、No Match（找不到），避免 AI 亂猜。</p></div><div class="card"><h3>ERP 查詢</h3><p>查成本、庫存、MOQ（最低訂購量）、Lead Time（交期）。</p></div><div class="card"><h3>報價規則</h3><p>檢查最低毛利、成本是否過期、售價是否低於成本。</p></div><div class="card"><h3>人工覆核</h3><p>AI 產生草稿，業助確認，高金額再送主管核准。</p></div><div class="card"><h3>版本追蹤</h3><p>判斷 Rev.A / Rev.B 哪一個是最新版，避免報舊資料。</p></div><div class="card"><h3>稽核紀錄</h3><p>記錄每個欄位從哪裡來、誰修改、誰核准。</p></div><div class="card"><h3>ROI 儀表板</h3><p>統計節省工時、處理量、自動匹配率，讓老闆看得懂價值。</p></div></div></section>
+<section id="tech"><div class="head"><div class="num">04</div><div><h2>每個功能可用哪些 2026 技術？</h2><p class="lead">下面用白話解釋。不是要全部都用，而是讓工程師可以依客戶環境選方案。</p></div></div><div class="tech-grid"><article class="tech-card"><div class="tech-head"><h3>收件與附件匯入</h3><p>把客戶寄來的 Email、Excel、PDF 收進系統。</p></div><ol><li><b>Microsoft Graph API（微軟郵件 API）</b><span>適合 Outlook / Microsoft 365 客戶，能讀信件、附件、寄草稿。</span></li><li><b>Gmail API（Google 郵件 API）</b><span>適合 Gmail / Google Workspace 客戶，能讀取信件與附件。</span></li><li><b>IMAP / SMTP（傳統郵件協定）</b><span>老系統常用，像萬用插頭，幾乎什麼信箱都能接。</span></li><li><b>Webhook / Inbound Email（信件轉事件）</b><span>客戶寄到指定信箱後，系統立刻收到通知。</span></li><li><b>n8n / Make（低程式自動化工具）</b><span>先快速接流程，適合 MVP 測試。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>文件解析與 OCR</h3><p>把 PDF、掃描件、表格讀成機器看得懂的資料。</p></div><ol><li><b>Azure AI Document Intelligence（微軟文件理解）</b><span>擅長抽文字、表格、欄位；適合企業客戶。</span></li><li><b>Google Document AI（Google 文件 AI）</b><span>把非結構化文件轉成結構化資料，也能處理版面與表格。</span></li><li><b>Amazon Textract（AWS 文件辨識）</b><span>適合已經在 AWS 上的公司，用來抽表格與表單。</span></li><li><b>Unstructured（文件預處理平台）</b><span>把 PDF、Office 文件切成好處理的段落與表格。</span></li><li><b>PaddleOCR / Tesseract（開源 OCR）</b><span>成本低、可自架，但複雜表格要自己補很多規則。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>AI 欄位抽取</h3><p>讓 AI 讀懂客戶信件，整理出客戶、數量、交期、交易條件。</p></div><ol><li><b>OpenAI / Azure OpenAI（大型語言模型）</b><span>適合做穩定的文字理解與 JSON 欄位抽取。</span></li><li><b>Anthropic Claude（大型語言模型）</b><span>適合長文件與文字推理，能讀較複雜信件。</span></li><li><b>Google Gemini（大型語言模型）</b><span>適合搭配 Google Cloud / Document AI 使用。</span></li><li><b>Mistral / Llama 自架模型</b><span>資料不能出公司時可考慮，但需要更多工程維護。</span></li><li><b>JSON Schema / Function Calling（固定輸出格式）</b><span>限制 AI 按指定表格輸出，減少亂回答。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>料號匹配與搜尋</h3><p>找出客戶寫的料號對應公司內部哪個產品。</p></div><ol><li><b>PostgreSQL + pgvector（資料庫加相似搜尋）</b><span>小到中型 MVP 很適合，一套資料庫同時放資料與相似比對。</span></li><li><b>Elasticsearch / OpenSearch（文字搜尋引擎）</b><span>適合料號、規格、描述的快速搜尋。</span></li><li><b>Qdrant（向量資料庫）</b><span>適合做語意搜尋，例如『M6 stainless screw』找相似產品。</span></li><li><b>Pinecone（託管向量資料庫）</b><span>不用自己維運，適合快速做 production。</span></li><li><b>Weaviate（向量資料庫）</b><span>支援語意搜尋與混合搜尋，適合知識庫型場景。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>ERP / 成本資料串接</h3><p>把料號連到成本、庫存、MOQ、交期。</p></div><ol><li><b>REST API（系統 API）</b><span>最乾淨，ERP 有 API 時優先用。</span></li><li><b>ODBC / JDBC（資料庫連線）</b><span>老 ERP 常見，可直接讀資料庫或報表庫。</span></li><li><b>CSV / Excel / SFTP（檔案交換）</b><span>沒有 API 時最務實，定時交換資料。</span></li><li><b>RPA（機器人操作舊系統）</b><span>ERP 太老沒接口時，讓機器人模擬人操作。</span></li><li><b>Airbyte / ETL（資料搬運工具）</b><span>把不同系統資料同步到中間資料庫。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>報價規則與風險檢查</h3><p>決定什麼可以報、什麼要警告、什麼必須擋下。</p></div><ol><li><b>JSONLogic（JSON 規則）</b><span>用 JSON 寫規則，工程師容易維護。</span></li><li><b>Drools（商業規則引擎）</b><span>複雜規則多時可用，但學習成本較高。</span></li><li><b>自建 Rule Service（自建規則服務）</b><span>彈性最高，適合先做 MVP。</span></li><li><b>SQL Rules（用資料庫規則）</b><span>簡單毛利、成本檢查可直接用 SQL。</span></li><li><b>表格化設定（像 Excel 的規則表）</b><span>非工程人員也能調整毛利與核准門檻。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>工作流程與核准</h3><p>讓每筆 RFQ 知道現在卡在哪一步。</p></div><ol><li><b>Temporal（工作流引擎）</b><span>適合正式產品，能重試、追蹤、恢復失敗流程。</span></li><li><b>n8n（流程自動化）</b><span>MVP 快速串流程很好用。</span></li><li><b>Camunda（BPM 流程管理）</b><span>大型企業流程複雜時適合。</span></li><li><b>BullMQ / Celery（背景任務隊列）</b><span>適合處理 OCR、AI 解析這類耗時工作。</span></li><li><b>狀態機 State Machine</b><span>把流程寫成清楚狀態，避免 UI 自己亂跳。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>人工覆核與權限</h3><p>AI 先做草稿，人負責確認與核准。</p></div><ol><li><b>React / Next.js（自建前端）</b><span>最彈性，適合正式 SaaS 產品。</span></li><li><b>Retool / Appsmith（內部工具平台）</b><span>MVP 很快，適合先做後台。</span></li><li><b>Power Apps（微軟低程式工具）</b><span>公司用 Microsoft 生態時方便。</span></li><li><b>RBAC（角色權限控制）</b><span>業助、主管、管理員看到不同功能。</span></li><li><b>SSO（單一登入）</b><span>用公司帳號登入，降低導入阻力。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>稽核、監控與 AI 品質</h3><p>記錄 AI 做了什麼、花多少錢、哪裡錯。</p></div><ol><li><b>Langfuse（AI 觀測與評估）</b><span>看每次 AI 呼叫、成本、錯誤與評分。</span></li><li><b>OpenLIT（OpenTelemetry AI 觀測）</b><span>用開放標準追蹤模型、工具與流程。</span></li><li><b>OpenTelemetry（通用監控標準）</b><span>像系統黑盒子，出事能回放流程。</span></li><li><b>Phoenix / Arize（AI 評估工具）</b><span>用來檢查 RAG、模型輸出品質。</span></li><li><b>Audit Log（稽核紀錄）</b><span>正式報價必備，知道誰改了什麼、何時改。</span></li></ol></article>
+<article class="tech-card"><div class="tech-head"><h3>ROI Dashboard</h3><p>讓老闆知道系統到底省了多少錢。</p></div><ol><li><b>Metabase（開源 BI）</b><span>快速做報表，工程成本低。</span></li><li><b>Power BI（微軟商業智慧）</b><span>企業常用，適合給主管看。</span></li><li><b>Looker Studio（Google 報表）</b><span>簡單免費，適合早期展示。</span></li><li><b>Grafana（監控儀表板）</b><span>適合把系統效能與流程數據放一起。</span></li><li><b>自建 Dashboard</b><span>最貼合產品，但開發成本較高。</span></li></ol></article>
+</div></section>
+<section id="mvp"><div class="head"><div class="num">05</div><div><h2>最小 MVP：第一版只做什麼？</h2><p class="lead">先做最容易落地、最能證明省時間的部分。不要一開始挑戰所有難題。</p></div></div><div class="grid g2"><div class="card"><h3>第一版要做</h3><ul><li>Email + Excel BOM 匯入</li><li>欄位抽取：客戶、料號、數量、交期、交易條件</li><li>料號 Exact / Fuzzy / No Match</li><li>查成本、庫存、MOQ、交期</li><li>產生報價草稿</li><li>人工覆核與主管核准</li><li>ROI Dashboard</li></ul></div><div class="card"><h3>第一版不要做</h3><ul><li>CAD 工程圖全面辨識</li><li>手機照片高準確辨識</li><li>全自動寄正式報價</li><li>所有 ERP 都串接</li><li>所有產業都支援</li></ul></div></div></section>
+<section id="plan"><div class="head"><div class="num">06</div><div><h2>12 週專案時程</h2><p class="lead">這是可執行的 MVP 節奏。重點不是一次做完，而是第 8 週就能跑真實 RFQ。</p></div></div><table><tr><th>階段</th><th>時間</th><th>做什麼</th><th>目標</th></tr><tr><td>需求確認</td><td>第 1–2 週</td><td>收集真實 RFQ、料號表、報價流程</td><td>知道最常見格式</td></tr><tr><td>解析與抽欄位</td><td>第 3–4 週</td><td>Email / Excel → 結構化 RFQ</td><td>能整理出乾淨表格</td></tr><tr><td>料號與 ERP</td><td>第 5–6 週</td><td>料號匹配、成本庫存查詢</td><td>能查到報價所需資料</td></tr><tr><td>報價草稿</td><td>第 7–8 週</td><td>規則檢查、毛利、Quotation Draft</td><td>能產出可確認草稿</td></tr><tr><td>覆核與儀表板</td><td>第 9–10 週</td><td>人工覆核、主管核准、ROI</td><td>能交給業助試用</td></tr><tr><td>Pilot 修正</td><td>第 11–12 週</td><td>用真實 RFQ 測試、修正錯誤</td><td>達到可付費試點</td></tr></table></section>
+<section id="team"><div class="head"><div class="num">07</div><div><h2>產品開發人力配置</h2><p class="lead">MVP 不需要大團隊，但需要懂 AI pipeline、前端流程與產業規則的人。</p></div></div><div class="grid g3"><div class="card"><h3>AI / Backend 工程師 1 位</h3><p>負責文件解析、LLM 抽欄位、料號匹配、ERP 串接、規則引擎。</p></div><div class="card"><h3>Frontend 工程師 1 位</h3><p>負責 RFQ Inbox、覆核畫面、報價草稿、Dashboard。</p></div><div class="card"><h3>產品 / 產業顧問 0.5–1 位</h3><p>負責確認業助流程、報價規則、測試案例、客戶訪談。</p></div><div class="card"><h3>QA / 導入支援 0.5 位</h3><p>第 9 週後加入，幫忙測試真實 RFQ、記錄錯誤與教育使用者。</p></div><div class="card"><h3>可選：ERP 顧問</h3><p>如果客戶 ERP 很老，可能需要熟該 ERP 的顧問協助接資料。</p></div><div class="card"><h3>可選：DevOps</h3><p>正式上線、多客戶、資安要求提高後再加入。</p></div></div></section>
+<section id="demo"><div class="head"><div class="num">08</div><div><h2>直覺操作 Demo</h2><p class="lead">這次 Demo 改成 6 步驟導覽，不需要懂系統也能照著按。</p></div></div><div class="demo-box"><div class="demo-top"><div><b>RFQ Pilot Demo</b><br><span class="mini">按步驟理解 RFQ 如何變成報價草稿</span></div><a class="btn" href="demo.html" target="_blank">另開 Demo</a></div><iframe src="demo.html"></iframe></div></section>
+<section id="ppt"><div class="head"><div class="num">09</div><div><h2>簡潔 PPT</h2><p class="lead">PPT 保持少字，適合簡報；詳細內容放在本網頁。</p></div></div><div class="ppt"><iframe src="RFQ_Pilot_專案簡報.pdf"></iframe><div class="card"><h3>檔案下載</h3><p>網頁是詳細專案說明，PPT 是簡潔提案版。</p><p><a class="btn primary" href="RFQ_Pilot_專案簡報.pptx">下載 PPTX</a></p><p><a class="btn" href="RFQ_Pilot_專案簡報.pdf">下載 PDF</a></p></div></div></section>
+<section><div class="head"><div class="num">10</div><div><h2>參考技術來源</h2><p class="lead">這些技術都是 2026 仍可採用的方向；實際選型要看客戶使用 Gmail / Microsoft 365、ERP 類型、資安限制與預算。</p></div></div><p class="foot">參考：Google Document AI、Azure AI Document Intelligence、Unstructured、Pinecone、Langfuse、OpenLIT 等官方文件與產品說明。正式投標前仍建議再依客戶需求重估價格、區域、資安與 SLA。</p></section>
+</div></main></div></body></html>
